@@ -24,6 +24,11 @@ export function recordWeight(input) {
   }
   if (isNaN(jin)) throw new Error('体重格式错误');
 
+  // 体重合法范围：0 < 斤 <= 1000（即 0 < kg <= 500）
+  if (!(jin > 0 && jin <= 1000)) {
+    throw new Error('体重需在 0-1000 斤之间');
+  }
+
   const rec = addWeight(jin, kg);
 
   // 与上次、首次、最低、最高比较
