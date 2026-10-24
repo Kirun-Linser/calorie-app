@@ -6,7 +6,6 @@ import {
 } from '../../core/db.js';
 import { QUICK_KEY, LEGACY_QUICK, readJSON } from '../../core/store.js';
 import { recordIntake, undoIntake, percentOfDaily, recalcDaily } from '../../domain/engine.js';
-import { closeDay } from '../../domain/state.js';
 import { parseInput, round1 } from '../../domain/parser.js';
 import { recordWeight } from '../../domain/weight.js';
 import { createAllocation, stopAllocation, undoAllocationBatch } from '../../domain/allocation.js';
@@ -63,7 +62,8 @@ export function render() {
     <div class="btn-row">
       <button class="btn btn--primary btn--block" data-act="intake">记热量</button>
       <button class="btn ${todayWeight ? 'btn--ok' : 'btn--ghost'}" data-act="weight">${todayWeight ? '已称 ' + round1(todayWeight.jin) + ' 斤' : '记体重'}</button>
-      <button class="btn btn--quiet" data-act="close">日结</button>
+      <!-- 「日结」已移出主界面（误触会提前结束当天）：每天 04:00 自动结算，
+           手动入口在 设置 → 当日 → 手动结束今天（带二次确认） -->
     </div>
 
     ${quickItems.length || true ? `
@@ -161,11 +161,7 @@ export function render() {
     const act = t.dataset.act;
     if (act === 'intake') openIntakeSheet();
     else if (act === 'weight') openWeightSheet();
-    else if (act === 'close') {
-      const r = closeDay(date, 'manual');
-      toast(r.skipped ? '当日已结束' : (r.summaryTriggered ? '已结束 · 触发周总结' : '已结束当日'), 'success');
-      rerender();
-    } else if (act === 'stopAlloc') {
+    else if (act === 'stopAlloc') {
       const a = getOpenAllocation();
       if (!a) return;
       try {
