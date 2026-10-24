@@ -5,8 +5,9 @@
 // v6：第 1 轮优化（抽屉滚动锁/焦点、存储失败可见性、全局错误兜底）→ bump。
 // v7：最近记录改为「向左滑动两次撤销」（today.js + components.css 内容变更）→ bump。
 // v8：输入校验（体重 0-1000 斤、热量 ±10000 kcal）+ PWA 离线/更新提示 → bump。
+// v9：日结按钮从今日页移出（防误触）→ 设置 → 当日 → 手动结束今天（二次确认）→ bump。
 // ⚠️ 改动清单或文件名时务必同步 bump CACHE 版本，否则老客户端会一直吃旧缓存。
-const CACHE = 'calorie-app-v8';
+const CACHE = 'calorie-app-v9';
 const ASSETS = [
   './', './index.html', './manifest.json',
 
