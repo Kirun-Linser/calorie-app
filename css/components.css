@@ -244,6 +244,10 @@
   transition: opacity var(--dur-2) var(--ease);
 }
 .sheet-mask.is-open { opacity: 1; pointer-events: auto; }
+/* 抽屉打开时锁定背景滚动，配合 JS 记录/还原 scrollY 防穿透 */
+/* scrollbar-gutter: stable —— 桌面端滚动条消失时页面不横向抖 15px */
+body.modal-open { overflow: hidden; scrollbar-gutter: stable; }
+body.modal-open .sheet-mask { touch-action: none; overscroll-behavior: contain; }
 .sheet {
   width: 100%;
   max-width: var(--maxw);
