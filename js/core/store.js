@@ -15,7 +15,12 @@ export function readJSON(key) {
 
 export function writeJSON(key, obj) {
   try { localStorage.setItem(key, JSON.stringify(obj)); return true; }
-  catch (e) { return false; }
+  catch (e) {
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      try { window.dispatchEvent(new CustomEvent('calorie:storage-error', { detail: { key, message: (e && e.message) ? e.message : String(e) } })); } catch (err) {}
+    }
+    return false;
+  }
 }
 
 export function removeKey(key) {
