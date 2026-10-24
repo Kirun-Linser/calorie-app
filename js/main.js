@@ -23,18 +23,53 @@ setInterval(() => {
   }
 }, 60000);
 
-// PWA 更新提示
-if ('serviceWorker' in navigator) {
+// PWA 更新提示 + 离线/恢复 + 新版本就绪提示
+// PWA 更新提示 + 离线/恢复 + 新版本就绪提示
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  let versionNotified = false;
+  const notifyVersion = () => {
+    if (versionNotified) return;
+    versionNotified = true;
+    try { toast('已更新到新版本', 'info'); } catch (err) { console.error(err); }
+  };
   navigator.serviceWorker.register('sw.js').then(reg => {
     reg.addEventListener('updatefound', () => {
       const nw = reg.installing;
+      if (!nw) return;
       nw.addEventListener('statechange', () => {
-        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-          if (window.confirm('检测到新版本，是否刷新？')) location.reload();
-        }
+        try {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            notifyVersion();
+          }
+        } catch (err) { console.error(err); }
       });
     });
   }).catch(() => {});
+  try {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      try { notifyVersion(); } catch (err) { console.error(err); }
+    });
+  } catch (err) { console.error(err); }
+}
+
+// 离线 / 恢复连接提示
+if (typeof window !== 'undefined') {
+  let offlineNotified = false;
+  try {
+    window.addEventListener('offline', () => {
+      try {
+        if (offlineNotified) return;
+        offlineNotified = true;
+        toast('已离线，仍可继续记录（数据存在本机）', 'info');
+      } catch (err) { console.error(err); }
+    });
+    window.addEventListener('online', () => {
+      try {
+        offlineNotified = false;
+        toast('已恢复连接', 'info');
+      } catch (err) { console.error(err); }
+    });
+  } catch (err) { console.error(err); }
 }
 
 // —— 全局错误兜底（r1-3）：未捕获异常 / 未处理拒绝 / 存储失败 ——
