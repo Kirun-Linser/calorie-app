@@ -97,18 +97,28 @@ export function render() {
         ${recs.length === 0
           ? `<div class="empty"><div class="empty__text">今天还没记东西</div><div class="empty__action"><button class="btn btn--sm btn--primary" data-act="intake">记第一笔</button></div></div>`
           : `<div class="list">${recs.map(r => `
-              <div class="list__row">
-                <div class="list__main">
-                  <div class="list__title">${esc(r.raw_input)}</div>
-                  <div class="list__meta">${String(r.created_at || '').slice(11, 16)}</div>
+              <div class="swipe-wrap">
+                <span class="swipe-hint" aria-hidden="true">再滑一次撤销</span>
+                <div class="list__row" data-rec-id="${r.id}">
+                  <div class="list__main">
+                    <div class="list__title">${esc(r.raw_input)}</div>
+                    <div class="list__meta">${String(r.created_at || '').slice(11, 16)}</div>
+                  </div>
+                  <div class="list__value">${round1(r.kcal)}</div>
+                  <button class="list__action" data-edit="${r.id}">改</button>
+                  ${r.undoable ? `<button class="list__action" data-undo="${r.id}">撤销</button>` : ''}
                 </div>
-                <div class="list__value">${round1(r.kcal)}</div>
-                <button class="list__action" data-edit="${r.id}">改</button>
-                ${r.undoable ? `<button class="list__action" data-undo="${r.id}">撤销</button>` : ''}
               </div>`).join('')}</div>`}
       </div>
     </div>
   `;
+
+  // 手势滑动后吞掉浏览器随之派发的 click，否则会误触行内的「改 / 撤销」按钮
+  // （实测：不拦截时第一次左滑就直接撤销了记录）
+  let suppressClickUntil = 0;
+  container.addEventListener('click', (e) => {
+    if (Date.now() < suppressClickUntil) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
 
   container.addEventListener('click', async (e) => {
     const del = e.target.closest('[data-delquick]');
@@ -179,6 +189,85 @@ export function render() {
         rerender();
       } catch (err) { toast(err.message, 'error'); }
     }
+  });
+
+  // —— 最近记录：向左滑动两次撤销（触摸与鼠标拖拽都支持）——
+  // 第一次滑过阈值 → 行停在 -88px 并显示「再滑一次撤销」；4 秒内第二次滑过阈值 → 执行撤销。
+  // 垂直滚动优先（|dx| 不超过 |dy| 就放弃接管），不会干扰页面滚动。
+  const SWIPE_TRIGGER = 56;   // 触发阈值 px
+  const SWIPE_OPEN = 88;      // 第一次滑够后停住的位移
+  let swipe = null;           // { row, wrap, startX, startY, dx, horizontal }
+  let armedRow = null;        // 已进入「再滑一次」状态的行
+  let armedTimer = null;
+
+  const clearArmed = (resetTransform) => {
+    if (armedTimer) { clearTimeout(armedTimer); armedTimer = null; }
+    if (armedRow) {
+      armedRow.classList.remove('is-swiping');
+      armedRow.style.transform = '';
+      const w = armedRow.closest('.swipe-wrap');
+      if (w) w.classList.remove('is-armed');
+    }
+    armedRow = null;
+  };
+
+  container.addEventListener('pointerdown', (e) => {
+    const row = e.target.closest('.swipe-wrap .list__row[data-rec-id]');
+    if (!row) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    swipe = { row, wrap: row.closest('.swipe-wrap'), startX: e.clientX, startY: e.clientY, dx: 0, horizontal: false };
+  });
+
+  container.addEventListener('pointermove', (e) => {
+    if (!swipe) return;
+    const dx = e.clientX - swipe.startX;
+    const dy = e.clientY - swipe.startY;
+    if (!swipe.horizontal) {
+      if (Math.abs(dx) < 8) return;
+      if (Math.abs(dx) <= Math.abs(dy)) { swipe = null; return; } // 判定为垂直滚动
+      swipe.horizontal = true;
+      swipe.row.classList.add('is-swiping');
+    }
+    swipe.dx = Math.min(0, dx);
+    const offset = Math.max(swipe.dx, -(SWIPE_OPEN + 20));
+    swipe.row.style.transform = `translateX(${offset}px)`;
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  const endSwipe = () => {
+    if (!swipe) return;
+    const { row, wrap, dx } = swipe;
+    swipe = null;
+    row.classList.remove('is-swiping');
+    // 只要发生了水平位移，就吞掉紧随其后的 click（含点在「撤销」上起手的情况）
+    if (dx < -8) suppressClickUntil = Date.now() + 500;
+    if (dx <= -SWIPE_TRIGGER) {
+      if (armedRow !== row) {
+        // 第一次滑够 → 进入待确认状态
+        clearArmed(false);
+        armedRow = row;
+        row.style.transform = `translateX(-${SWIPE_OPEN}px)`;
+        if (wrap) wrap.classList.add('is-armed');
+        armedTimer = setTimeout(() => clearArmed(false), 4000);
+        return;
+      }
+      // 第二次滑够 → 真正撤销（复用既有按钮逻辑，避免重复实现）
+      clearArmed(false);
+      const btn = row.querySelector('[data-undo]');
+      // 先临时解除 click 抑制，否则这次程序化 click 会被自己吞掉（实测踩过）
+      if (btn) { suppressClickUntil = 0; btn.click(); suppressClickUntil = Date.now() + 500; }
+      return;
+    }
+    // 没滑够：回弹
+    row.style.transform = '';
+    if (armedRow === row) clearArmed(false);
+  };
+  container.addEventListener('pointerup', endSwipe);
+  container.addEventListener('pointercancel', () => {
+    if (!swipe) return;
+    swipe.row.classList.remove('is-swiping');
+    swipe.row.style.transform = armedRow === swipe.row ? `translateX(-${SWIPE_OPEN}px)` : '';
+    swipe = null;
   });
 
   return container;
