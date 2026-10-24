@@ -161,7 +161,35 @@
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   min-height: 52px;
+  /* 左滑撤销：只接管水平手势，垂直滚动仍交给页面 */
+  position: relative;
+  z-index: 1;
+  touch-action: pan-y;
+  transition: transform var(--dur-1) var(--ease);
 }
+.list__row.is-swiping { transition: none; }
+/* 滑动容器：hint 固定在右侧不随行位移，行左移后露出来 */
+.swipe-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+}
+.swipe-hint {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.swipe-wrap.is-armed .swipe-hint { opacity: 1; }
 .list__main { flex: 1 1 auto; min-width: 0; }
 .list__title { font-size: var(--fs-15); font-weight: 500; color: var(--text); }
 .list__meta { font-size: var(--fs-12); color: var(--text-2); margin-top: 2px; }
