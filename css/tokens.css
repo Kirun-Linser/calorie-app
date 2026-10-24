@@ -1,0 +1,33 @@
+/* ===== 设计令牌：唯一颜色/间距/字号来源 ===== */
+:root {
+  /* 底色：近黑中性偏冷，不用纯黑 */
+  --bg:#0A0E12; --bg-elev:#11171D; --bg-elev-2:#182028; --bg-sunken:#070A0D;
+  --line:#212B35; --line-soft:rgba(255,255,255,.06);
+  /* 文字 */
+  --text:#E8EEF4; --text-2:#A9B6C2; --text-3:#8391A0;
+  /* 主色 teal */
+  --accent:#2DD4BF; --accent-strong:#14B8A6; --accent-ink:#04211E;
+  --accent-soft:rgba(45,212,191,.12);
+  /* 语义色 */
+  --ok:#34D399; --warn:#FBBF24; --danger:#FB7185; --danger-strong:#F43F5E; --info:#60A5FA;
+  --ok-soft:rgba(52,211,153,.12); --warn-soft:rgba(251,191,36,.12); --danger-soft:rgba(251,113,133,.12);
+  /* 字体 */
+  --font-sans:-apple-system,BlinkMacSystemFont,"PingFang SC","HarmonyOS Sans SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --font-num:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+  /* 字号：7 档 */
+  --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-15:15px; --fs-17:17px; --fs-22:22px; --fs-34:34px;
+  /* 间距 4pt 基准 */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  /* 圆角 3 档 + 全圆 */
+  --r-sm:10px; --r-md:16px; --r-lg:24px; --r-full:999px;
+  /* 动效 */
+  --ease:cubic-bezier(.2,0,0,1); --dur-1:120ms; --dur-2:200ms; --dur-3:320ms;
+  /* 安全区 & 布局 */
+  --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+  --tabbar-h:56px; --maxw:520px;
+  /* 阴影（仅浮层） */
+  --shadow-sheet:0 -8px 32px rgba(0,0,0,.45);
+  --shadow-toast:0 8px 24px rgba(0,0,0,.35);
+  /* 焦点环 */
+  --focus-ring:0 0 0 3px var(--accent-soft);
+}

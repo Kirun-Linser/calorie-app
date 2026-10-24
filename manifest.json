@@ -1,0 +1,17 @@
+{
+  "name": "热量记录",
+  "short_name": "热量",
+  "description": "每日热量摄入记录与体重预测",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0A0E12",
+  "theme_color": "#0A0E12",
+  "orientation": "portrait",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "icons/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

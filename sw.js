@@ -1,0 +1,69 @@
+// service worker：stale-while-revalidate
+// 先返回缓存（秒开），同时后台重新 fetch 并更新缓存，下次打开即为新版
+// v4：目录结构重构（css/ + js/core + js/domain + js/ui），预缓存清单必须与 index.html 实际引用一致。
+// v5：备份导出 JSON 合并快捷项（js/core/db.js + js/ui/views/settings.js 内容变更）→ bump 让老客户端换新缓存。
+// ⚠️ 改动清单或文件名时务必同步 bump CACHE 版本，否则老客户端会一直吃旧缓存。
+const CACHE = 'calorie-app-v5';
+const ASSETS = [
+  './', './index.html', './manifest.json',
+
+  // 样式（顺序与 index.html 的 <link> 一致）
+  './css/tokens.css', './css/base.css', './css/components.css',
+
+  // 入口
+  './js/main.js',
+
+  // 核心层
+  './js/core/store.js', './js/core/migrate.js', './js/core/date.js', './js/core/db.js',
+
+  // 领域层
+  './js/domain/parser.js', './js/domain/engine.js', './js/domain/state.js',
+  './js/domain/weight.js', './js/domain/allocation.js',
+
+  // UI 层
+  './js/ui/components.js', './js/ui/charts.js', './js/ui/app.js',
+  './js/ui/views/today.js', './js/ui/views/trends.js', './js/ui/views/settings.js',
+
+  // 图标
+  './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE)
+      // 逐个 add 而不是 addAll：单个资源缺失不至于让整次安装失败、SW 永久停在旧版
+      .then(c => Promise.all(ASSETS.map(a => c.add(a).catch(err => {
+        console.warn('[sw] 预缓存失败（已跳过）:', a, err && err.message);
+      }))))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  // 只接管同源请求
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  e.respondWith(
+    caches.open(CACHE).then(cache =>
+      cache.match(e.request).then(cached => {
+        const networkFetch = fetch(e.request).then(networkRes => {
+          if (networkRes && networkRes.status === 200 && networkRes.type === 'basic') {
+            cache.put(e.request, networkRes.clone());
+          }
+          return networkRes;
+        }).catch(() => cached);
+        return cached || networkFetch;
+      })
+    )
+  );
+});
