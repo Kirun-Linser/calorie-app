@@ -3,8 +3,9 @@ import {
   searchFood, addFood, getFood, updateFood, deleteFood,
   exportBackup, normalizeBackup, importBackup
 } from '../../core/db.js';
-import { fmtDate } from '../../core/date.js';
+import { fmtDate, logicalDate } from '../../core/date.js';
 import { setTargetKcal } from '../../domain/engine.js';
+import { closeDay } from '../../domain/state.js';
 import { round1 } from '../../domain/parser.js';
 import { toast, openSheet, confirmSheet, esc } from '../components.js';
 
@@ -41,6 +42,16 @@ export function render() {
       <div class="card__head"><span class="card__title">食物词典</span></div>
       <div class="card__body"><div class="list__meta" id="foodCount"></div></div>
       <div class="card__foot"><button class="btn btn--sm" data-act="manageFoods">管理</button></div>
+    </div>
+    <div class="card">
+      <div class="card__head"><span class="card__title">当日</span></div>
+      <div class="card__body">
+        <div style="font-size:13px;color:var(--text-2);line-height:1.6;">
+          每天 <b>04:00</b> 会自动结算，通常不需要手动操作。<br>
+          下面这个按钮只在你想<b>提前结束今天</b>时用（已移到设置页，避免误触）。
+        </div>
+        <button class="btn btn--block" data-act="closeDay" style="margin-top:10px;">手动结束今天</button>
+      </div>
     </div>
     <div class="card">
       <div class="card__head"><span class="card__title">数据</span></div>
@@ -114,6 +125,19 @@ export function render() {
       draft.age = parseInt(container.querySelector('#ageRange').value,10);
       setAppState({ user_profile: JSON.stringify(draft) });
       toast('档案已保存', 'success');
+    } else if (t.dataset.act === 'closeDay') {
+      // 手动日结：从今日页移到这里（主界面误触会提前结束当天），并强制二次确认
+      const d = logicalDate(new Date());
+      const ok = await confirmSheet({
+        title: '结束今天',
+        text: `把今天（${d}）标记为已结束？今日总计会固定下来，之后仍可修改记录。`,
+        danger: true,
+        okText: '结束今天',
+      });
+      if (!ok) return;
+      const r = closeDay(d, 'manual');
+      toast(r.skipped ? '今天已经结束过了' : (r.summaryTriggered ? '已结束 · 触发周总结' : '已结束今天'), 'success');
+      setTimeout(() => location.reload(), 700);
     } else if (t.dataset.act === 'manageFoods') {
       openFoodManager(paintFoodCount);
     } else if (t.dataset.act === 'exportJson') {
