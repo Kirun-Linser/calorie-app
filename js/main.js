@@ -44,9 +44,28 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
         } catch (err) { console.error(err); }
       });
     });
+    // 首次访问：SW 已装好但本页还没被接管（controller=null）→ 提示再刷新一次即可离线。
+    // 只提示一次（localStorage 标记）；用户清站点数据后会重新提示，符合预期。
+    // ⚠️ 必须延迟再判定：serviceWorker.ready 在 activate 时就 resolve，而 clients.claim()
+    //    生效有延迟（本机实测 >800ms）—— 立刻检查会在"其实已受控"时误提示（实测踩过两次）。
+    navigator.serviceWorker.ready.then(() => {
+      setTimeout(() => {
+        try {
+          if (navigator.serviceWorker.controller) return;           // 已受控，无需提示
+          const KEY = 'calorie.sw-first-hint';
+          if (localStorage.getItem(KEY) === '1') return;            // 已提示过
+          localStorage.setItem(KEY, '1');
+          toast('页面已缓存，再刷新一次即可离线使用', 'success');
+        } catch (err) { console.error(err); }
+      }, 2000);
+    }).catch(() => {});
   }).catch(() => {});
   try {
+    // ⚠️ 首次安装也会触发 controllerchange（clients.claim），那时并不存在"旧版本"。
+    //    所以只有「此前已经有 controller」时才算真正的版本更新（实测踩过：首访就弹"已更新"）。
+    let hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController) { hadController = true; return; }
       try { notifyVersion(); } catch (err) { console.error(err); }
     });
   } catch (err) { console.error(err); }
