@@ -106,6 +106,15 @@ function applyMult(r, mult) {
   };
 }
 
+// 热量合法范围：|kcal| <= 10000（单条）
+// ⚠️ 只拦「荒谬大值」。**不要**改成 `kcal > 0`：parser 支持负数冲销（`-500kj` 记错纠偏）
+// 与 `0kj`=0，加下限会废掉这两个既有功能（2026-10-24 实测：parser.test + engine.test 共 3 条红）。
+function validateKcal(kcal) {
+  if (!(Number.isFinite(kcal) && Math.abs(kcal) <= 10000)) {
+    throw new Error('热量需在 0-10000 kcal 之间（负数可用于冲销）');
+  }
+}
+
 // 主入口：支持 ➕ / + 连接的多 token
 export function parseInput(input) {
   const text = (input || '').trim();
@@ -115,7 +124,9 @@ export function parseInput(input) {
   if (parts.length === 0) throw new Error('空输入');
 
   if (parts.length === 1) {
-    return parseToken(parts[0]);
+    const r = parseToken(parts[0]);
+    validateKcal(r.kcal);
+    return r;
   }
 
   // 组合：各项相加
@@ -130,7 +141,7 @@ export function parseInput(input) {
     if (r.gram) totalGram += r.gram;
     items.push(r);
   }
-  return {
+  const result = {
     kcal: totalKcal,
     kj: totalKj || undefined,
     gram: totalGram || undefined,
@@ -138,6 +149,8 @@ export function parseInput(input) {
     type: 'combo',
     items
   };
+  validateKcal(totalKcal);
+  return result;
 }
 
 // 百分比：按当日目标（v1 5.5）。纯函数，放在这里是为了让 UI 从 parser 或 engine 任一处都能取到
