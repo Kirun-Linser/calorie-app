@@ -3,8 +3,9 @@
 // v4：目录结构重构（css/ + js/core + js/domain + js/ui），预缓存清单必须与 index.html 实际引用一致。
 // v5：备份导出 JSON 合并快捷项（js/core/db.js + js/ui/views/settings.js 内容变更）→ bump 让老客户端换新缓存。
 // v6：第 1 轮优化（抽屉滚动锁/焦点、存储失败可见性、全局错误兜底）→ bump。
+// v7：最近记录改为「向左滑动两次撤销」（today.js + components.css 内容变更）→ bump。
 // ⚠️ 改动清单或文件名时务必同步 bump CACHE 版本，否则老客户端会一直吃旧缓存。
-const CACHE = 'calorie-app-v6';
+const CACHE = 'calorie-app-v7';
 const ASSETS = [
   './', './index.html', './manifest.json',
 
