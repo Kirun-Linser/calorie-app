@@ -7,8 +7,9 @@
 // v8：输入校验（体重 0-1000 斤、热量 ±10000 kcal）+ PWA 离线/更新提示 → bump。
 // v9：日结按钮从今日页移出（防误触）→ 设置 → 当日 → 手动结束今天（二次确认）→ bump。
 // v10：首次访问未受控时的「再刷新一次即可离线」提示；修首访误报「已更新到新版本」。
+// v11：历史每日可编辑（总热量/目标/重开/结束）+ 修 startupAutoClose 不推进逻辑日 → bump。
 // ⚠️ 改动清单或文件名时务必同步 bump CACHE 版本，否则老客户端会一直吃旧缓存。
-const CACHE = 'calorie-app-v10';
+const CACHE = 'calorie-app-v11';
 const ASSETS = [
   './', './index.html', './manifest.json',
 
