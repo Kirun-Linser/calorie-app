@@ -105,7 +105,15 @@ if (typeof window !== 'undefined') {
   };
   try {
     window.addEventListener('error', (e) => {
-      const msg = (e && e.message ? e.message : '未知脚本错误').slice(0, 60);
+      const rawMsg = e && e.message ? e.message : '未知脚本错误';
+      // 良性警告/跨域脱敏错误：没有可操作信息，不弹 toast，仅 console.warn
+      // - ResizeObserver loop ...：图表尺寸观测自激产生的浏览器警告，已在 observeResize 用尺寸差+RAF 节流抑制
+      // - Script error.（或 Script error 前缀）：跨域脚本的脱敏错误，浏览器不给堆栈/行号，提示用户无意义
+      if (rawMsg.indexOf('ResizeObserver loop') !== -1 || rawMsg.indexOf('Script error') === 0) {
+        console.warn('[suppressed] window error:', rawMsg);
+        return;
+      }
+      const msg = String(rawMsg).slice(0, 60);
       throttleToast(keyOf('err', msg), `出错了：${msg}`);
     });
     window.addEventListener('unhandledrejection', (e) => {
