@@ -1,6 +1,6 @@
 import { getAppState, getDailyRecord, getWeights, getStore, upsertDailyRecord } from '../../core/db.js';
 import { predictWeight } from '../../domain/weight.js';
-import { getWeekSummary } from '../../domain/state.js';
+import { getWeekSummary, reopenDay } from '../../domain/state.js';
 import { round1, percentOfDaily } from '../../domain/parser.js';
 import { lastNDates, weekday } from '../../core/date.js';
 import { toast, openSheet, closeSheet, confirmSheet, esc } from '../components.js';
@@ -167,13 +167,18 @@ function openEditDaySheet(date) {
       if (isClosed) {
         const ok = await confirmSheet({
           title: '重新打开该天',
-          text: `将 ${date} 从「已结束」列表中移除（closed_at 清空）。它会从历史每日消失，并可能影响本周总结统计。`,
+          text: `将 ${date} 重新变为可编辑的当天（日期会回退到这天）。结束时自动建出来的空日会被清除，有数据的天保留。`,
           okText: '重新打开',
           danger: true,
         });
         if (!ok) return;
-        upsertDailyRecord(date, { closed_at: null, close_type: null });
-        toast('已重新打开', 'success');
+        try {
+          const r = reopenDay(date);
+          toast(`已回到 ${r.logical_date}，可以修改那天的记录`, 'success');
+        } catch (err) {
+          toast('重开失败：' + (err && err.message ? err.message : '未知错误'), 'error');
+          return;
+        }
       } else {
         const ok = await confirmSheet({
           title: '标记为已结束',
