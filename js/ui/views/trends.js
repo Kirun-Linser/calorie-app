@@ -1,9 +1,9 @@
-import { getAppState, getDailyRecord, getWeights, getStore } from '../../core/db.js';
+import { getAppState, getDailyRecord, getWeights, getStore, upsertDailyRecord } from '../../core/db.js';
 import { predictWeight } from '../../domain/weight.js';
 import { getWeekSummary } from '../../domain/state.js';
 import { round1, percentOfDaily } from '../../domain/parser.js';
 import { lastNDates, weekday } from '../../core/date.js';
-import { toast, openSheet, esc } from '../components.js';
+import { toast, openSheet, closeSheet, confirmSheet, esc } from '../components.js';
 import { renderWeightTrend, renderWeekBars } from '../../ui/charts.js';
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -69,12 +69,18 @@ export function render() {
     return `<div class="list__row">
       <div class="list__main">
         <div class="list__title">${r.logical_date} <span class="list__meta">${WEEKDAYS[weekday(r.logical_date)]}</span></div>
-        <div class="list__meta">目标 ${r.target_kcal}</div>
+        <div class="list__meta">目标 ${r.target_kcal}${r.close_type === 'manual' ? ' · 手动结束' : ''}</div>
       </div>
       <div class="list__value ${pct > 100 ? 'is-over' : ''}">${round1(r.total_kcal)}</div>
+      <button class="btn btn--sm" data-edit-day="${r.logical_date}">改</button>
     </div>`;
   }).join('')}</div>` : '<div class="empty"><div class="empty__text">暂无历史</div></div>';
   container.addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('[data-edit-day]');
+    if (editBtn) {
+      openEditDaySheet(editBtn.dataset.editDay);
+      return;
+    }
     const t = e.target.closest('[data-act]');
     if (!t) return;
     if (t.dataset.act === 'weekSummary') {
@@ -120,4 +126,67 @@ export function render() {
     }
   });
   return container;
+}
+
+// 历史每日「改」：改当天总热量 / 目标 / 重开或结束当天
+function openEditDaySheet(date) {
+  const rec = getDailyRecord(date);
+  if (!rec) { toast('该天暂无记录', 'error'); return; }
+  const wd = WEEKDAYS[weekday(date)];
+  const isClosed = !!rec.closed_at;
+  const body = `
+    <div class="field"><div class="field__label">当天总热量（kcal）</div>
+      <input class="input" id="editDayKcal" type="number" step="0.1" inputmode="decimal" value="${round1(rec.total_kcal)}"></div>
+    <div class="field"><div class="field__label">当天目标（kcal）</div>
+      <input class="input" id="editDayTarget" type="number" step="1" inputmode="numeric" value="${rec.target_kcal}"></div>
+  `;
+  const footer = `
+    <button class="btn btn--ghost" id="editDayClose">取消</button>
+    <button class="btn ${isClosed ? 'btn--ghost' : 'btn--danger'}" id="editDayToggle">${isClosed ? '重新打开该天' : '标记为已结束'}</button>
+    <button class="btn btn--primary" id="editDaySave">保存</button>
+  `;
+  openSheet({ title: `修改 ${date}（${wd}）`, body, footer });
+  setTimeout(() => {
+    const kcalEl = document.getElementById('editDayKcal');
+    const targetEl = document.getElementById('editDayTarget');
+    const save = document.getElementById('editDaySave');
+    const toggle = document.getElementById('editDayToggle');
+    const close = document.getElementById('editDayClose');
+    if (close) close.onclick = () => closeSheet();
+    if (save) save.onclick = () => {
+      const kcal = parseFloat(kcalEl.value);
+      const target = parseInt(targetEl.value, 10);
+      if (!Number.isFinite(kcal) || kcal < 0 || kcal > 10000) { toast('热量需在 0-10000 之间', 'error'); return; }
+      if (!Number.isFinite(target) || target < 500 || target > 8000) { toast('目标需在 500-8000 之间', 'error'); return; }
+      upsertDailyRecord(date, { total_kcal: kcal, target_kcal: target });
+      toast('已保存', 'success');
+      closeSheet();
+      if (window.app && window.app.rerender) window.app.rerender();
+    };
+    if (toggle) toggle.onclick = async () => {
+      if (isClosed) {
+        const ok = await confirmSheet({
+          title: '重新打开该天',
+          text: `将 ${date} 从「已结束」列表中移除（closed_at 清空）。它会从历史每日消失，并可能影响本周总结统计。`,
+          okText: '重新打开',
+          danger: true,
+        });
+        if (!ok) return;
+        upsertDailyRecord(date, { closed_at: null, close_type: null });
+        toast('已重新打开', 'success');
+      } else {
+        const ok = await confirmSheet({
+          title: '标记为已结束',
+          text: `把 ${date} 标记为已结束（手动）。今日总计会固定下来，之后仍可在此处修改记录。`,
+          okText: '结束该天',
+          danger: true,
+        });
+        if (!ok) return;
+        upsertDailyRecord(date, { closed_at: new Date().toISOString(), close_type: 'manual' });
+        toast('已标记结束', 'success');
+      }
+      closeSheet();
+      if (window.app && window.app.rerender) window.app.rerender();
+    };
+  }, 0);
 }
