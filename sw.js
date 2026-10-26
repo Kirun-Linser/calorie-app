@@ -8,8 +8,9 @@
 // v9：日结按钮从今日页移出（防误触）→ 设置 → 当日 → 手动结束今天（二次确认）→ bump。
 // v10：首次访问未受控时的「再刷新一次即可离线」提示；修首访误报「已更新到新版本」。
 // v11：历史每日可编辑（总热量/目标/重开/结束）+ 修 startupAutoClose 不推进逻辑日 → bump。
+// v12：今日页右上角加「刷新」按钮（清 SW 缓存后重载，解决手机上拿不到新版）→ bump。
 // ⚠️ 改动清单或文件名时务必同步 bump CACHE 版本，否则老客户端会一直吃旧缓存。
-const CACHE = 'calorie-app-v11';
+const CACHE = 'calorie-app-v12';
 const ASSETS = [
   './', './index.html', './manifest.json',
 
