@@ -3,7 +3,7 @@ import {
   searchFood, addFood, getFood, updateFood, deleteFood,
   exportBackup, normalizeBackup, importBackup
 } from '../../core/db.js';
-import { fmtDate, logicalDate } from '../../core/date.js';
+import { fmtDate } from '../../core/date.js';
 import { setTargetKcal } from '../../domain/engine.js';
 import { closeDay } from '../../domain/state.js';
 import { round1 } from '../../domain/parser.js';
@@ -127,7 +127,11 @@ export function render() {
       toast('档案已保存', 'success');
     } else if (t.dataset.act === 'closeDay') {
       // 手动日结：从今日页移到这里（主界面误触会提前结束当天），并强制二次确认
-      const d = logicalDate(new Date());
+      // BUG-1 修复：必须用逻辑日（state.logical_date），不是真实今天；
+      // 否则 logical_date 已经推进到明天时，手动结束会去关「真实今天」（已 closed → skipped），
+      // 真正的逻辑今天永远关不掉。
+      const st = getAppState();
+      const d = st.logical_date;
       const ok = await confirmSheet({
         title: '结束今天',
         text: `把今天（${d}）标记为已结束？今日总计会固定下来，之后仍可修改记录。`,
@@ -136,8 +140,12 @@ export function render() {
       });
       if (!ok) return;
       const r = closeDay(d, 'manual');
-      toast(r.skipped ? '今天已经结束过了' : (r.summaryTriggered ? '已结束 · 触发周总结' : '已结束今天'), 'success');
-      setTimeout(() => location.reload(), 700);
+      if (r.skipped) {
+        toast(`${d} 已经结束过了`, 'error');
+      } else {
+        toast(r.summaryTriggered ? `已结束 ${d} · 触发周总结` : `已结束 ${d}`, 'success');
+        setTimeout(() => location.reload(), 700);
+      }
     } else if (t.dataset.act === 'manageFoods') {
       openFoodManager(paintFoodCount);
     } else if (t.dataset.act === 'exportJson') {
