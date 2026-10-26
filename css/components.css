@@ -36,7 +36,8 @@
   transition: color var(--dur-1) var(--ease);
 }
 .tabbar__item.is-active { color: var(--accent); }
-.tabbar__icon { font-size: var(--fs-22); line-height: 1; }
+.tabbar__item.is-active svg { color: currentColor; }
+.tabbar__icon { display: flex; align-items: center; justify-content: center; line-height: 1; }
 .tabbar__label { font-size: var(--fs-11); }
 
 .view { padding: var(--sp-2) 0; }
