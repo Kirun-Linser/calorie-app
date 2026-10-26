@@ -1,5 +1,48 @@
 import { readJSON, writeJSON, readRaw, LEGACY_KEY, STORAGE_KEY, QUICK_KEY, LEGACY_QUICK } from './store.js';
 
+/**
+ * 历史汇总占位迁移（幂等）。
+ *
+ * 根因：daily_records.total_kcal 是 intake_records 的聚合值，但旧导入数据
+ * 只有 total、没有明细 → 任何 recalcDaily() 都会把 total 抹成 0（只剩分摊量）。
+ * 解法：对每个 total_kcal>0 且无任何 intake_record 的历史日，补一条
+ * food_id='__legacy__' 的占位记录，其 kcal 等于原 total。
+ * 之后 recalcDaily 的聚合结果 = 原 total，语义保持一致。
+ *
+ * 幂等：已有任何 intake_record（含 __legacy__）的日子不再补；total<=0 的日子不补。
+ * @param {object} store 已 normalize 过的 v2 store（就地修改）
+ * @returns {number} 新增占位记录数
+ */
+export function migrateLegacyPlaceholder(store) {
+  if (!store || !store.daily_records || typeof store.daily_records !== 'object') return 0;
+  const hasIntake = {};
+  for (const r of store.intake_records || []) hasIntake[r.logical_date] = true;
+
+  const now = new Date().toISOString();
+  let nextId = (store._seq && Number(store._seq.intake_records)) || 0;
+  let added = 0;
+  for (const date of Object.keys(store.daily_records)) {
+    const daily = store.daily_records[date];
+    if (!daily || !daily.total_kcal || daily.total_kcal <= 0) continue;
+    if (hasIntake[date]) continue;
+    nextId++;
+    store.intake_records.push({
+      id: nextId,
+      raw_input: '历史汇总',
+      kcal: daily.total_kcal,
+      kj: null,
+      gram: null,
+      food_id: '__legacy__',
+      logical_date: date,
+      created_at: now,
+      undoable: 0
+    });
+    added++;
+  }
+  if (added > 0 && store._seq) store._seq.intake_records = nextId;
+  return added;
+}
+
 export function needsMigration() {
   const legacy = readRaw(LEGACY_KEY);
   if (legacy == null) return false;
