@@ -17,6 +17,30 @@ const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '�
 // app.js 会挂 window.app，回调里通过它重绘，避免循环 import
 const rerender = () => { if (window.app && window.app.rerender) window.app.rerender(); };
 
+// 右上角刷新：手机上 PWA 常因旧 Service Worker 缓存看不到更新。
+// 联网时先清掉本应用的缓存与注册，再重载（确保拿到最新版）；离线时只重载，避免清完打不开。
+async function hardRefresh() {
+  const btn = document.querySelector('.view__refresh');
+  if (btn) btn.classList.add('is-busy');
+  try { toast('正在获取最新版本…', 'info'); } catch (e) {}
+  const online = !(typeof navigator !== 'undefined' && navigator.onLine === false);
+  if (online) {
+    try {
+      if (typeof caches !== 'undefined') {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+    } catch (e) {}
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => (r.update ? r.update().catch(() => {}) : Promise.resolve())));
+      }
+    } catch (e) {}
+  }
+  setTimeout(() => { try { location.reload(); } catch (e) {} }, 400);
+}
+
 // ===== 快捷项（独立 localStorage 键，不入 DB 备份 —— v1 决策 4 保持不变） =====
 function getQuickItems() {
   const v2 = readJSON(QUICK_KEY);
@@ -46,6 +70,7 @@ export function render() {
     <div class="view__head">
       <h1 class="view__title">今日</h1>
       <div class="view__sub">${date} ${WEEKDAYS[weekday(date)]} · 第 ${state.current_day_index} 天</div>
+      <button class="view__refresh" data-act="hardRefresh" aria-label="刷新并获取最新版本" title="刷新（清缓存后重载）">⟳</button>
     </div>
 
     <div class="hero">
@@ -159,6 +184,7 @@ export function render() {
     }
 
     const act = t.dataset.act;
+    if (act === 'hardRefresh') { await hardRefresh(); return; }
     if (act === 'intake') openIntakeSheet();
     else if (act === 'weight') openWeightSheet();
     else if (act === 'stopAlloc') {
