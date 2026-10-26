@@ -29,9 +29,28 @@ function ns(tag) { return document.createElementNS('http://www.w3.org/2000/svg',
 
 function observeResize(container, renderFn) {
   if (!window.ResizeObserver) return () => {};
-  const ro = new ResizeObserver(() => renderFn());
+  let lastW = -1, lastH = -1;
+  let rafId = 0;
+  const ro = new ResizeObserver((entries) => {
+    const entry = entries && entries[0];
+    const cr = entry ? (entry.contentRect || (entry.target && entry.target.getBoundingClientRect())) : null;
+    const w = cr ? cr.width : (container.clientWidth || 0);
+    const h = cr ? cr.height : (container.clientHeight || 0);
+    // 只在尺寸真的变化（>=1px）时才重绘，避免自激循环
+    if (Math.abs(w - lastW) < 1 && Math.abs(h - lastH) < 1) return;
+    lastW = w; lastH = h;
+    // requestAnimationFrame 节流：同一帧内多次触发只重绘一次
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => {
+      rafId = 0;
+      try { renderFn(); } catch (err) { console.error(err); }
+    });
+  });
   ro.observe(container);
-  return () => ro.disconnect();
+  return () => {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+    ro.disconnect();
+  };
 }
 
 const registry = new WeakMap(); // container -> { cleanup, lastRender }
