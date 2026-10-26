@@ -2,7 +2,7 @@
 // v2 适配点：daily_records 由数组变对象索引 → 遍历一律走 getAllDailyRecords()
 
 import {
-  getAppState, setAppState, getDailyRecord, upsertDailyRecord,
+  getAppState, setAppState, getStore, getDailyRecord, upsertDailyRecord,
   getAllDailyRecords, getIntakeRecordsByDate, nowISO, saveDB
 } from '../core/db.js';
 import { fmtDate, parseDate, weekday, diffDays, logicalDate } from '../core/date.js';
@@ -80,6 +80,7 @@ export function autoCloseDay(now = new Date()) {
 }
 
 // 启动补偿循环：直到 last_auto_close_date == 今天的逻辑日
+// ⚠️ 被 reopenDay 重开的日子不会被这里自动关掉（见 state.reopened_date）。
 export function startupAutoClose(now = new Date()) {
   const today = logicalDateFor(now);
   const results = [];
@@ -92,6 +93,7 @@ export function startupAutoClose(now = new Date()) {
     const nxt = nextDay(cur);
     const daily = getDailyRecord(cur);
     const alreadyClosed = !!(daily && daily.closed_at);
+    const isReopened = state.reopened_date && state.reopened_date === cur;
 
     // 周日结束 → 周一，触发周总结
     if (weekday(cur) === 0 && weekday(nxt) === 1) {
@@ -112,10 +114,9 @@ export function startupAutoClose(now = new Date()) {
     // ⚠️ 自动结束这一天：原来由 autoCloseDay→closeDay 负责，追平循环改写后必须自己补上。
     // 否则「忘了日结的那天」会永远停在未结束 → 不出现在趋势页「历史每日」，也不计入周总结的已结束天数。
     // cur 一定 < today（循环条件保证），所以把过去的日子标为已结束是安全的。
-    if (!alreadyClosed) {
-      // ⚠️ 不能无条件 recalcDaily：导入 / 手动编辑过的日子没有 intake_records，
-      //    重算会把已有的 total_kcal 归零（实测：26 天备份里 10-24 的 1190.989 被抹成 0）。
-      //    只有确实存在明细记录时才重算。
+    // 唯一例外：被 reopenDay 显式重开的日子（reopened_date === cur）—— 用户要回去改它，
+    // 不能这里又自动关掉，否则「重开 → 刷新 → 又被关」。
+    if (!alreadyClosed && !isReopened) {
       if (getIntakeRecordsByDate(cur).length > 0) recalcDaily(cur);
       upsertDailyRecord({ logical_date: cur, closed_at: nowISO(), close_type: 'auto' });
     }
@@ -131,12 +132,14 @@ export function startupAutoClose(now = new Date()) {
       });
     }
 
+    // 跨过重开的那天之后，重开标记就失效了（这天已经作为「已完成编辑」跨过了）
     setAppState({
       logical_date: nxt,
-      current_day_index: newIndex
+      current_day_index: newIndex,
+      reopened_date: isReopened ? null : state.reopened_date
     });
 
-    results.push({ skipped: alreadyClosed, daily: getDailyRecord(cur), newDate: nxt });
+    results.push({ skipped: alreadyClosed || isReopened, daily: getDailyRecord(cur), newDate: nxt });
     guard++;
   }
   // 追平 last_auto_close_date
@@ -145,6 +148,56 @@ export function startupAutoClose(now = new Date()) {
     setAppState({ last_auto_close_date: today });
   }
   return results;
+}
+
+// 重新打开某天：把这天变回可编辑的当前日，并清理「结束它时多出来的空日」。
+// 语义：
+//   - 该日必须已存在；清掉 closed_at / close_type
+//   - 该日之后到当前 logical_date（含）之间的每一天：若 total_kcal<=0 且无明细 → 删除
+//     （这些是结束时自动建出来的空日，用户没填数据）；有数据则保留
+//   - logical_date 回退到 dateStr，current_day_index 按日期差回退（>=1）
+//   - last_auto_close_date 设为 dateStr，reopened_date 设为 dateStr
+//     （这样下次启动 startupAutoClose 不会立刻把这天又自动关掉）
+// 重开后用户改完那天的数据，可以再点「手动结束今天」正常推进。
+export function reopenDay(dateStr) {
+  const daily = getDailyRecord(dateStr);
+  if (!daily) throw new Error(`reopenDay: ${dateStr} 不存在`);
+
+  // 1) 清掉 closed_at / close_type
+  upsertDailyRecord({ logical_date: dateStr, closed_at: null, close_type: null });
+
+  const state = getAppState();
+  const removed = [];
+
+  // 2) 清理该日之后、当前 logical_date 之前（含）的空日
+  //    范围：(dateStr, state.logical_date]
+  let cursor = nextDay(dateStr);
+  const upper = state.logical_date;
+  const store = getStore();
+  while (cursor <= upper) {
+    const d = getDailyRecord(cursor);
+    const hasIntake = getIntakeRecordsByDate(cursor).length > 0;
+    const totalKcal = d ? (Number(d.total_kcal) || 0) : 0;
+    if (d && totalKcal <= 0 && !hasIntake) {
+      delete store.daily_records[cursor];
+      removed.push(cursor);
+    }
+    // 有数据的日子保留（不删用户数据）；保持原有 closed_at 状态
+    cursor = nextDay(cursor);
+  }
+
+  // 3) 回退 app_state
+  const diff = diffDays(dateStr, state.logical_date); // logical_date - dateStr
+  const newIndex = Math.max(1, state.current_day_index - diff);
+  setAppState({
+    logical_date: dateStr,
+    current_day_index: newIndex,
+    last_auto_close_date: dateStr,
+    reopened_date: dateStr
+  });
+  saveDB();
+
+  return { logical_date: dateStr, current_day_index: newIndex, removed };
 }
 
 export function nextDay(dateStr) {
