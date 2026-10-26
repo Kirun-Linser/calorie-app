@@ -63,7 +63,7 @@ export function render() {
         <button class="btn btn--block" data-act="clearAll" style="color:var(--danger)">清空所有数据</button>
       </div>
     </div>
-    <div class="card"><div class="card__body"><div class="empty"><div class="empty__text">关于：热量记录 v2</div></div></div></div>
+    <div class="card"><div class="card__body"><div class="empty"><div class="empty__text">关于：K++（热量记录）v2</div></div></div></div>
   `;
   // 局部更新 range 数值（不重建）
   const heightRange = container.querySelector('#heightRange');
