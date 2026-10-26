@@ -10,8 +10,9 @@
 // v11：历史每日可编辑（总热量/目标/重开/结束）+ 修 startupAutoClose 不推进逻辑日 → bump。
 // v12：今日页右上角加「刷新」按钮（清 SW 缓存后重载，解决手机上拿不到新版）→ bump。
 // v13：分摊多条并存+历史占位迁移+撤销清空日、日结三连 bug、ResizeObserver 循环、tab 图标 → bump。
+// v14：分摊 UI 接线（多条卡片 + createAllocationFromKcal 修正单位 + 停止后可撤销）→ bump。
 // ⚠️ 改动清单或文件名时务必同步 bump CACHE 版本，否则老客户端会一直吃旧缓存。
-const CACHE = 'calorie-app-v13';
+const CACHE = 'calorie-app-v14';
 const ASSETS = [
   './', './index.html', './manifest.json',
 
