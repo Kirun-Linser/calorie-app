@@ -3,7 +3,7 @@
 
 import {
   getAppState, setAppState, getDailyRecord, upsertDailyRecord,
-  getAllDailyRecords, nowISO, saveDB
+  getAllDailyRecords, getIntakeRecordsByDate, nowISO, saveDB
 } from '../core/db.js';
 import { fmtDate, parseDate, weekday, diffDays, logicalDate } from '../core/date.js';
 import { recalcDaily } from './engine.js';
@@ -84,17 +84,65 @@ export function startupAutoClose(now = new Date()) {
   const today = logicalDateFor(now);
   const results = [];
   let guard = 0;
-  while (guard < 365) { // 安全上限，防死循环
+  while (guard < 365) {
     const state = getAppState();
-    if (state.last_auto_close_date === today) break;
-    const r = autoCloseDay(now);
-    results.push(r);
-    if (r.skipped) {
-      // 已关闭但 last_auto_close_date 未更新 → 强制更新
-      setAppState({ last_auto_close_date: today });
-      break;
+    if (state.logical_date >= today) break;
+    if (state.last_auto_close_date === today && state.logical_date === today) break;
+    const cur = state.logical_date;
+    const nxt = nextDay(cur);
+    const daily = getDailyRecord(cur);
+    const alreadyClosed = !!(daily && daily.closed_at);
+
+    // 周日结束 → 周一，触发周总结
+    if (weekday(cur) === 0 && weekday(nxt) === 1) {
+      setAppState({ last_summary_date: cur });
     }
+
+    // 确保当前日记录存在（缺失则补建空记录，已存在不覆盖）
+    if (!daily) {
+      upsertDailyRecord({
+        logical_date: cur,
+        total_kcal: 0,
+        target_kcal: state.target_kcal,
+        closed_at: null,
+        close_type: null
+      });
+    }
+
+    // ⚠️ 自动结束这一天：原来由 autoCloseDay→closeDay 负责，追平循环改写后必须自己补上。
+    // 否则「忘了日结的那天」会永远停在未结束 → 不出现在趋势页「历史每日」，也不计入周总结的已结束天数。
+    // cur 一定 < today（循环条件保证），所以把过去的日子标为已结束是安全的。
+    if (!alreadyClosed) {
+      // ⚠️ 不能无条件 recalcDaily：导入 / 手动编辑过的日子没有 intake_records，
+      //    重算会把已有的 total_kcal 归零（实测：26 天备份里 10-24 的 1190.989 被抹成 0）。
+      //    只有确实存在明细记录时才重算。
+      if (getIntakeRecordsByDate(cur).length > 0) recalcDaily(cur);
+      upsertDailyRecord({ logical_date: cur, closed_at: nowISO(), close_type: 'auto' });
+    }
+
+    const newIndex = state.current_day_index + 1;
+    if (!getDailyRecord(nxt)) {
+      upsertDailyRecord({
+        logical_date: nxt,
+        total_kcal: 0,
+        target_kcal: state.target_kcal,
+        closed_at: null,
+        close_type: null
+      });
+    }
+
+    setAppState({
+      logical_date: nxt,
+      current_day_index: newIndex
+    });
+
+    results.push({ skipped: alreadyClosed, daily: getDailyRecord(cur), newDate: nxt });
     guard++;
+  }
+  // 追平 last_auto_close_date
+  const finalState = getAppState();
+  if (finalState.last_auto_close_date !== today) {
+    setAppState({ last_auto_close_date: today });
   }
   return results;
 }
