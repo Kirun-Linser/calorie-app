@@ -2,7 +2,7 @@
 // 与 v1 的差异：daily_records 由数组改为「以 logical_date 为键的对象」；存储键改为 calorie.db.v2；
 // 初始化走 migrate()（幂等、不删旧键）。业务语义与 v1 完全一致。
 import { readJSON, writeJSON, STORAGE_KEY, QUICK_KEY } from './store.js';
-import { migrate } from './migrate.js';
+import { migrate, migrateLegacyPlaceholder } from './migrate.js';
 import { fmtDate, parseDate, logicalDate, todayStr, weekday, diffDays } from './date.js';
 
 const SEQ_KEYS = { intake_records: 0, weight_records: 0, allocation: 0 };
@@ -84,6 +84,9 @@ export function initDB() {
     if (readJSON(STORAGE_KEY) == null) writeJSON(STORAGE_KEY, emptyStore());
   }
   _store = normalize(readJSON(STORAGE_KEY) || emptyStore());
+  // 历史汇总占位迁移：对有 total 但无明细的历史日补 __legacy__ 占位记录，
+  // 防止 recalcDaily 把这些日的 total 抹成 0。幂等，连跑无副作用。
+  migrateLegacyPlaceholder(_store);
   seedFoodDict();
   saveDB();
   return _store;
@@ -143,6 +146,17 @@ export function upsertDailyRecord(dateOrRec, patch) {
 export function getAllDailyRecords() {
   return Object.values(getStore().daily_records)
     .sort((a, b) => String(a.logical_date).localeCompare(String(b.logical_date)));
+}
+
+// 删除某日记录（撤销分摊后该日为空、且无其它明细时使用，避免留空壳）
+export function deleteDailyRecord(date) {
+  const s = getStore();
+  if (s.daily_records[date]) {
+    delete s.daily_records[date];
+    saveDB();
+    return true;
+  }
+  return false;
 }
 
 // ===== intake_records =====
@@ -258,7 +272,16 @@ export function addAllocation(total_kcal, start_date) {
 }
 
 export function getOpenAllocation() {
+  // ⚠️ 兼容旧调用：只返回第一条 open 分摊。
+  // 现已支持多条 open 并存，新代码请用 getOpenAllocations() 取全部。
   return getStore().allocation.find(a => a.status === 'open') || null;
+}
+
+// 返回所有 status==='open' 的分摊，按 start_date 升序
+export function getOpenAllocations() {
+  return getStore().allocation
+    .filter(a => a.status === 'open')
+    .sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)));
 }
 
 export function updateAllocation(id, patch) {
