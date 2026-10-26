@@ -115,9 +115,27 @@ function validateKcal(kcal) {
   }
 }
 
+// 输入归一化：手机输入法打出的「负号 / 数字 / 小数点」常不是 ASCII，直接进正则会解析失败。
+// 实测背景（2026-10-26 用户反馈「负热量是负号的判定问题」）：
+//   全角连字符 － U+FF0D、数学减号 − U+2212、短破折号 – U+2013、长破折号 — U+2014、小连字符﹣ U+FE63
+//   全角数字 ０-９ U+FF10-FF19、全角小数点 ．U+FF0E、全角空格 U+3000
+// 统一转成 ASCII 再解析；不影响已有格式（739，330 / 739kj / 6个蛋 等）。
+export function normalizeInput(input) {
+  let s = String(input == null ? '' : input);
+  // 负号族 → ASCII '-'
+  s = s.replace(/[－−–—﹣]/g, '-');
+  // 全角数字 → 半角
+  s = s.replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+  // 全角小数点 → '.'
+  s = s.replace(/．/g, '.');
+  // 全角空格 → 普通空格
+  s = s.replace(/　/g, ' ');
+  return s.trim();
+}
+
 // 主入口：支持 ➕ / + 连接的多 token
 export function parseInput(input) {
-  const text = (input || '').trim();
+  const text = normalizeInput(input);
   if (!text) throw new Error('空输入');
 
   const parts = text.split(/[➕+]/).map(p => p.trim()).filter(Boolean);
