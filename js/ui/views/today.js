@@ -1,14 +1,14 @@
 // views/today.js — 「今日」页
 // 功能对齐 v1：记热量（手动/历史/词典/快捷 四入口 + 待分摊）、记体重、日结、快捷项增删、撤销、待分摊管理
 import {
-  getAppState, getDailyRecord, getIntakeRecordsByDate, getOpenAllocation,
-  getWeights, getStore, searchFood, addFood, updateIntakeRecord
+  getAppState, getDailyRecord, getIntakeRecordsByDate, getOpenAllocations, getStore,
+  getWeights, searchFood, addFood, updateIntakeRecord
 } from '../../core/db.js';
 import { QUICK_KEY, LEGACY_QUICK, readJSON } from '../../core/store.js';
 import { recordIntake, undoIntake, percentOfDaily, recalcDaily } from '../../domain/engine.js';
 import { parseInput, round1 } from '../../domain/parser.js';
 import { recordWeight } from '../../domain/weight.js';
-import { createAllocation, stopAllocation, undoAllocationBatch } from '../../domain/allocation.js';
+import { createAllocationFromKcal, stopAllocation, undoAllocationBatch } from '../../domain/allocation.js';
 import { weekday } from '../../core/date.js';
 import { toast, openSheet, closeSheet, confirmSheet, esc } from '../components.js';
 
@@ -59,7 +59,12 @@ export function render() {
   const daily = getDailyRecord(date) || { logical_date: date, total_kcal: 0, target_kcal: state.target_kcal, closed_at: null };
   const pct = percentOfDaily(daily.total_kcal, daily.target_kcal);
   const recs = getIntakeRecordsByDate(date).slice().reverse(); // 最新在上
-  const alloc = getOpenAllocation();
+  const allocs = getOpenAllocations();
+  // 撤销入口：open 分摊停止后卡片会消失，这里额外保留最近 1 条可撤销的 stopped 分摊
+  const lastStopped = getStore().allocation
+    .filter(a => a.status === 'stopped' && a.batch_id)
+    .sort((a, b) => String(b.stop_date || '').localeCompare(String(a.stop_date || '')))[0] || null;
+  const allocSum = allocs.reduce((s, a) => s + (a.total_kcal || 0), 0);
   const weights = getWeights();
   const todayWeight = weights.find(w => String(w.created_at).slice(0, 10) === date);
   const quickItems = getQuickItems();
@@ -104,15 +109,33 @@ export function render() {
         </div>
       </div>` : ''}
 
-    ${alloc ? `
+    ${allocs.length > 0 ? `
+      <div class="card">
+        <div class="card__head">
+          <span class="card__title"><span class="badge badge--warn">待分摊</span>
+          <span style="margin-left:8px">待分摊合计 ${round1(allocSum)} kcal（${allocs.length} 条）</span></span>
+        </div>
+        <div class="card__body">
+          <div class="list">
+            ${allocs.map(a => `
+              <div class="list__row" data-alloc-id="${a.id}">
+                <div class="list__main">
+                  <div class="list__title">${round1(a.total_kcal)} kcal</div>
+                  <div class="list__meta">起算 ${esc(a.start_date)}</div>
+                </div>
+                <button class="btn btn--sm btn--ok" data-act="stopAlloc" data-id="${a.id}">停止分摊</button>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>` : ''}
+    ${allocs.length === 0 && lastStopped ? `
       <div class="card">
         <div class="card__body">
-          <span class="badge badge--warn">待分摊</span>
-          <span style="margin-left:8px">${round1(alloc.total_kcal)} kcal · 起算 ${alloc.start_date}</span>
+          <span class="badge badge--ok">已停止</span>
+          <span style="margin-left:8px">已停止 ${esc(lastStopped.start_date)}~${esc(lastStopped.stop_date)}，可撤销</span>
         </div>
         <div class="card__foot">
-          <button class="btn btn--sm btn--ok" data-act="stopAlloc">停止分摊</button>
-          <button class="btn btn--sm btn--danger" data-act="undoAlloc" data-batch="${esc(alloc.batch_id)}">撤销分摊</button>
+          <button class="btn btn--sm btn--danger" data-act="undoAlloc" data-batch="${esc(lastStopped.batch_id)}">撤销分摊</button>
         </div>
       </div>` : ''}
 
@@ -188,7 +211,7 @@ export function render() {
     if (act === 'intake') openIntakeSheet();
     else if (act === 'weight') openWeightSheet();
     else if (act === 'stopAlloc') {
-      const a = getOpenAllocation();
+      const a = getStore().allocation.find(x => String(x.id) === String(t.dataset.id) && x.status === 'open');
       if (!a) return;
       try {
         const r = stopAllocation(a.id);
@@ -196,6 +219,7 @@ export function render() {
         rerender();
       } catch (err) { toast(err.message, 'error'); }
     } else if (act === 'undoAlloc') {
+      if (!t.dataset.batch) return; // 撤销必须按 batch_id 精确定位，不允许空值
       const ok = await confirmSheet({ title: '撤销分摊', text: '撤销本次分摊会删除已分摊的每日记录，确定吗？', danger: true });
       if (ok) {
         try {
@@ -373,11 +397,11 @@ function renderTab(tab, body) {
       if (!v) return;
       try {
         const parsed = parseInput(v);
-        const kj = parsed.kj !== undefined ? parsed.kj : parsed.kcal * 4.184;
-        const grams = parsed.gram || 0;
-        if (!grams) throw new Error('待分摊需要能算出重量的输入（如 739，330）');
-        createAllocation(kj, grams);
-        toast(`已创建待分摊：${round1(parsed.kcal)} kcal`, 'success');
+        // kcal 优先；解析结果没有 kcal 时用 kJ/4.184 兜底
+        const kcal = parsed.kcal !== undefined ? parsed.kcal : parsed.kj / 4.184;
+        if (!(kcal > 0)) throw new Error('待分摊需要能算出热量的输入');
+        const created = createAllocationFromKcal(kcal);
+        toast(`已创建待分摊：${round1(created.total_kcal)} kcal`, 'success');
         closeSheet();
         rerender();
       } catch (e) { toast(e.message, 'error'); }
