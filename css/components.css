@@ -40,9 +40,26 @@
 .tabbar__label { font-size: var(--fs-11); }
 
 .view { padding: var(--sp-2) 0; }
-.view__head { margin-bottom: var(--sp-4); }
+.view__head { margin-bottom: var(--sp-4); position: relative; padding-right: 52px; }
 .view__title { font-size: var(--fs-22); font-weight: 700; letter-spacing: -0.01em; }
 .view__sub { font-size: var(--fs-13); color: var(--text-2); margin-top: var(--sp-1); }
+/* 右上角「刷新」：手机上 PWA 常因旧 SW 缓存看不到新版本，点了会清缓存并重载 */
+.view__refresh {
+  position: absolute;
+  top: 0; right: 0;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text-2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.view__refresh:active { background: var(--bg-elev-2); transform: rotate(90deg); }
+.view__refresh.is-busy { pointer-events: none; opacity: .5; }
 
 .card {
   background: var(--bg-elev);
