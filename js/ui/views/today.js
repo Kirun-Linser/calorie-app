@@ -60,10 +60,13 @@ export function render() {
   const pct = percentOfDaily(daily.total_kcal, daily.target_kcal);
   const recs = getIntakeRecordsByDate(date).slice().reverse(); // 最新在上
   const allocs = getOpenAllocations();
-  // 撤销入口：open 分摊停止后卡片会消失，这里额外保留最近 1 条可撤销的 stopped 分摊
-  const lastStopped = getStore().allocation
+  // 撤销入口：已停止的分摊要能撤销。**必须列出全部**（原来只留最近 1 条，
+  // 且渲染条件写成 allocs.length===0 → 只要还有未停止的分摊，整块撤销区就不显示，
+  // 用户实测"待分摊不论在任务区还是分摊区都无法撤销"就是这个原因）。
+  const stoppedAllocs = getStore().allocation
     .filter(a => a.status === 'stopped' && a.batch_id)
-    .sort((a, b) => String(b.stop_date || '').localeCompare(String(a.stop_date || '')))[0] || null;
+    .sort((a, b) => String(b.stop_date || '').localeCompare(String(a.stop_date || '')));
+  const lastStopped = stoppedAllocs[0] || null; // 保留旧变量名给其它引用兜底
   const allocSum = allocs.reduce((s, a) => s + (a.total_kcal || 0), 0);
   const weights = getWeights();
   const todayWeight = weights.find(w => String(w.created_at).slice(0, 10) === date);
@@ -128,15 +131,17 @@ export function render() {
           </div>
         </div>
       </div>` : ''}
-    ${allocs.length === 0 && lastStopped ? `
+    ${stoppedAllocs.length ? `
       <div class="card">
         <div class="card__body">
           <span class="badge badge--ok">已停止</span>
-          <span style="margin-left:8px">已停止 ${esc(lastStopped.start_date)}~${esc(lastStopped.stop_date)}，可撤销</span>
+          <span style="margin-left:8px">${stoppedAllocs.length} 条分摊已停止，可撤销（撤销会按批精确回退那几日）</span>
         </div>
-        <div class="card__foot">
-          <button class="btn btn--sm btn--danger" data-act="undoAlloc" data-batch="${esc(lastStopped.batch_id)}">撤销分摊</button>
-        </div>
+        ${stoppedAllocs.map(a => `
+        <div class="card__foot" style="justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:var(--text-2)">${esc(a.start_date)} ~ ${esc(a.stop_date || '')} · ${round1(a.total_kcal)} kcal</span>
+          <button class="btn btn--sm btn--danger" data-act="undoAlloc" data-batch="${esc(a.batch_id)}">撤销分摊</button>
+        </div>`).join('')}
       </div>` : ''}
 
     <div class="card">
@@ -352,15 +357,17 @@ function openIntakeSheet() {
 function renderTab(tab, body) {
   if (tab === 'manual') {
     body.innerHTML = `
-      <input class="input" id="intakeInput" placeholder="如 739，330 / 739kj / 6个蛋" autocomplete="off">
+      <input class="input" id="intakeInput" placeholder="如 739，330 / 739kj / 6个蛋 / -500（冲销）" autocomplete="off">
       <div class="preview" id="intakePreview"></div>
       <div class="hint">可用格式：739，330（kj/100g,克）· 739kj · 6个蛋 · 一份烩面 · 烩面x2 · 6个蛋➕2个橘子</div>
+      <div class="hint" style="color:var(--text-2)">想<b>冲销 / 纠错</b>就填<b>负数</b>：-500 表示从当天扣掉 500 kcal（总额会真的减少，可以是负的）</div>
       <div class="chips">
         <button class="chip" data-fill="739，330">739，330</button>
         <button class="chip" data-fill="739kj">739kj</button>
         <button class="chip" data-fill="6个蛋">6个蛋</button>
         <button class="chip" data-fill="一份烩面">一份烩面</button>
         <button class="chip" data-fill="243kj，2500g">243kj，2500g</button>
+        <button class="chip" data-fill="-500">-500 冲销</button>
       </div>
       <button class="btn btn--primary btn--block" id="submitIntake">记录</button>
       <button class="btn btn--ghost btn--block" id="submitAlloc">作为待分摊（大包装 / 多日量）</button>
