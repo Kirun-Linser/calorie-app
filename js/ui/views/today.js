@@ -10,6 +10,7 @@ import { parseInput, round1 } from '../../domain/parser.js';
 import { recordWeight } from '../../domain/weight.js';
 import { createAllocationFromKcal, stopAllocation, undoAllocationBatch } from '../../domain/allocation.js';
 import { weekday } from '../../core/date.js';
+import { hasUnclosedDay, getUnclosedDays, prevDay } from '../../domain/state.js';
 import { toast, openSheet, closeSheet, confirmSheet, esc } from '../components.js';
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -72,6 +73,20 @@ export function render() {
   const todayWeight = weights.find(w => String(w.created_at).slice(0, 10) === date);
   const quickItems = getQuickItems();
 
+  // 未日结顶条：昨天或更早有「有数据但没日结」的日子 → 提醒去设置页手动结束
+  // hasUnclosedDay() 与 getUnclosedDays() 同源，先布尔后取数组；文案区分「昨天」与「X 天」
+  const unclosed = hasUnclosedDay() ? getUnclosedDays() : [];
+  const bannerText = unclosed.length === 0
+    ? ''
+    : unclosed.length === 1 && unclosed[0] === prevDay(state.logical_date)
+      ? '昨天未日结，点击去处理'
+      : `有 ${unclosed.length} 天未日结，点击去处理`;
+  const unclosedBanner = bannerText
+    ? `<div class="unclosed-banner" data-act="gotoSettings" role="button" tabindex="0" aria-label="${esc(bannerText)}，前往设置页手动结束今天">
+         ⚠️ <span>${esc(bannerText)}</span>
+       </div>`
+    : '';
+
   const container = document.createElement('div');
   container.className = 'view';
   container.innerHTML = `
@@ -80,6 +95,8 @@ export function render() {
       <div class="view__sub">${date} ${WEEKDAYS[weekday(date)]} · 第 ${state.current_day_index} 天</div>
       <button class="view__refresh" data-act="hardRefresh" aria-label="刷新并获取最新版本" title="刷新（清缓存后重载）">⟳</button>
     </div>
+
+    ${unclosedBanner}
 
     <div class="hero">
       <div class="hero__row">
@@ -173,6 +190,13 @@ export function render() {
     if (Date.now() < suppressClickUntil) { e.stopPropagation(); e.preventDefault(); }
   }, true);
 
+  // 键盘可达性：role="button" 的顶条用 Enter/Space 触发（与 quick-item 同模式）
+  container.addEventListener('keydown', (e) => {
+    const b = e.target.closest('.unclosed-banner');
+    if (!b) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); }
+  });
+
   container.addEventListener('click', async (e) => {
     const del = e.target.closest('[data-delquick]');
     if (del) { // 删除必须先于整卡点击处理，且阻止冒泡导致的误记录
@@ -213,6 +237,7 @@ export function render() {
 
     const act = t.dataset.act;
     if (act === 'hardRefresh') { await hardRefresh(); return; }
+    if (act === 'gotoSettings') { window.app.navigate('settings'); return; } // 未日结顶条 → 设置页「手动结束今天」
     if (act === 'intake') openIntakeSheet();
     else if (act === 'weight') openWeightSheet();
     else if (act === 'stopAlloc') {
