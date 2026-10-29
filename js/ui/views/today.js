@@ -1,5 +1,6 @@
-// views/today.js — 「今日」页
-// 功能对齐 v1：记热量（手动/历史/词典/快捷 四入口 + 待分摊）、记体重、日结、快捷项增删、撤销、待分摊管理
+// views/today.js — 「今日」页（账本版）
+// 上方深色区：今天还可以吃多少 + 记账输入；下方纸白区：一行一笔的今日台账。
+// 功能：记热量（手动快速路径 + 四入口抽屉/历史/词典/快捷 + 待分摊）、记体重、快捷项增删、单条改/撤销（带二次确认）、左滑两次撤销、待分摊管理
 import {
   getAppState, getDailyRecord, getIntakeRecordsByDate, getOpenAllocations, getStore,
   getWeights, searchFood, addFood, updateIntakeRecord
@@ -8,9 +9,8 @@ import { QUICK_KEY, LEGACY_QUICK, readJSON } from '../../core/store.js';
 import { recordIntake, undoIntake, percentOfDaily, recalcDaily } from '../../domain/engine.js';
 import { parseInput, round1 } from '../../domain/parser.js';
 import { recordWeight } from '../../domain/weight.js';
-import { createAllocationFromKcal, stopAllocation, undoAllocationBatch } from '../../domain/allocation.js';
+import { createAllocationFromKcal, stopAllocation } from '../../domain/allocation.js';
 import { weekday } from '../../core/date.js';
-import { hasUnclosedDay, getUnclosedDays, prevDay } from '../../domain/state.js';
 import { toast, openSheet, closeSheet, confirmSheet, esc } from '../components.js';
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -53,84 +53,125 @@ function saveQuickItems(items) {
   try { localStorage.setItem(QUICK_KEY, JSON.stringify(items)); } catch (e) { /* 忽略配额错误 */ }
 }
 
-// ===== 主视图 =====
+// ===== 主视图（账本版） =====
 export function render() {
   const state = getAppState();
-  const date = state.logical_date;
+  const date = state.logical_date; // 一律用 04:00 逻辑日，不用真实今天
   const daily = getDailyRecord(date) || { logical_date: date, total_kcal: 0, target_kcal: state.target_kcal, closed_at: null };
-  const pct = percentOfDaily(daily.total_kcal, daily.target_kcal);
+  const target = daily.target_kcal;
+  const eaten = daily.total_kcal;
+  const pct = percentOfDaily(eaten, target);
+  const left = target - eaten;            // 主数字语义：还剩多少
+  const over = left < 0;
+  const leftAbs = over ? -left : left;
   const recs = getIntakeRecordsByDate(date).slice().reverse(); // 最新在上
   const allocs = getOpenAllocations();
-  // 撤销入口：已停止的分摊要能撤销。**必须列出全部**（原来只留最近 1 条，
-  // 且渲染条件写成 allocs.length===0 → 只要还有未停止的分摊，整块撤销区就不显示，
-  // 用户实测"待分摊不论在任务区还是分摊区都无法撤销"就是这个原因）。
-  const stoppedAllocs = getStore().allocation
-    .filter(a => a.status === 'stopped' && a.batch_id)
-    .sort((a, b) => String(b.stop_date || '').localeCompare(String(a.stop_date || '')));
-  const lastStopped = stoppedAllocs[0] || null; // 保留旧变量名给其它引用兜底
   const allocSum = allocs.reduce((s, a) => s + (a.total_kcal || 0), 0);
   const weights = getWeights();
   const todayWeight = weights.find(w => String(w.created_at).slice(0, 10) === date);
   const quickItems = getQuickItems();
 
-  // 未日结顶条：昨天或更早有「有数据但没日结」的日子 → 提醒去设置页手动结束
-  // hasUnclosedDay() 与 getUnclosedDays() 同源，先布尔后取数组；文案区分「昨天」与「X 天」
-  const unclosed = hasUnclosedDay() ? getUnclosedDays() : [];
-  const bannerText = unclosed.length === 0
-    ? ''
-    : unclosed.length === 1 && unclosed[0] === prevDay(state.logical_date)
-      ? '昨天未日结，点击去处理'
-      : `有 ${unclosed.length} 天未日结，点击去处理`;
-  const unclosedBanner = bannerText
-    ? `<div class="unclosed-banner" data-act="gotoSettings" role="button" tabindex="0" aria-label="${esc(bannerText)}，前往设置页手动结束今天">
-         ⚠️ <span>${esc(bannerText)}</span>
-       </div>`
-    : '';
+  // 进度条下方状态行：空态 / 还差 / 超标
+  const note = recs.length === 0
+    ? '今天还没记东西'
+    : over
+      ? `已吃 ${round1(pct)}%，超了 ${round1(leftAbs)} kcal`
+      : `已吃 ${round1(pct)}%，还差 ${round1(left)} kcal`;
+
+  const dateLine = `${date} ${WEEKDAYS[weekday(date)]} · 第 ${state.current_day_index} 天`;
 
   const container = document.createElement('div');
-  container.className = 'view';
+  container.className = 'view view--ledger';
   container.innerHTML = `
-    <div class="view__head">
-      <h1 class="view__title">今日</h1>
-      <div class="view__sub">${date} ${WEEKDAYS[weekday(date)]} · 第 ${state.current_day_index} 天</div>
-      <button class="view__refresh" data-act="hardRefresh" aria-label="刷新并获取最新版本" title="刷新（清缓存后重载）">⟳</button>
-    </div>
-
-    ${unclosedBanner}
-
-    <div class="hero">
-      <div class="hero__row">
-        <span class="hero__value">${round1(daily.total_kcal)}</span>
-        <span class="hero__unit">/ ${daily.target_kcal} kcal</span>
+    <div class="masthead">
+      <div class="masthead__left">
+        <h1 class="wordmark">K<span class="wordmark__plus">++</span></h1>
+        <p class="masthead__date">${esc(dateLine)}</p>
       </div>
-      <div class="hero__meta">${round1(pct)}%${pct > 100 ? ' · 已超标' : ''}</div>
-      <div class="progress">
-        <div class="progress__fill ${pct > 100 ? 'is-over' : pct >= 80 ? 'is-ok' : ''}" style="width:${Math.min(100, Math.max(0, pct))}%"></div>
-      </div>
+      <button class="masthead__refresh view__refresh" data-act="hardRefresh" aria-label="刷新并获取最新版本" title="刷新（清缓存后重载）">⟳</button>
     </div>
 
-    <div class="btn-row">
-      <button class="btn btn--primary btn--block" data-act="intake">记热量</button>
-      <button class="btn ${todayWeight ? 'btn--ok' : 'btn--ghost'}" data-act="weight">${todayWeight ? '已称 ' + round1(todayWeight.jin) + ' 斤' : '记体重'}</button>
-      <!-- 「日结」已移出主界面（误触会提前结束当天）：每天 04:00 自动结算，
-           手动入口在 设置 → 当日 → 手动结束今天（带二次确认） -->
+    <div class="hero ${over ? 'is-over' : ''}">
+      <p class="hero__label">${over ? '今天已经超出' : '今天还可以吃'}</p>
+      <p class="hero__row">
+        <span class="hero__value">${round1(leftAbs)}</span>
+        <span class="hero__unit">kcal</span>
+      </p>
+      <p class="hero__meta">已吃 ${round1(eaten)} / 目标 ${round1(target)}</p>
     </div>
 
-    ${quickItems.length || true ? `
-      <div class="quick-grid">
-        ${quickItems.map((h, i) => `
-          <div class="quick-item" data-quick="${i}" role="button" tabindex="0" aria-label="记录 ${esc(h.label)} ${round1(h.kcal)} 千卡">
-            <span class="quick-item__label">${esc(h.label)}</span>
-            <span class="quick-item__kcal">${round1(h.kcal)} kcal</span>
-            <button class="quick-item__del" data-delquick="${i}" aria-label="删除 ${esc(h.label)}" title="删除">×</button>
-          </div>`).join('')}
-        <div class="quick-item quick-item--add" data-addquick="1" role="button" tabindex="0" aria-label="添加快捷项">
-          <span class="quick-item__label">＋ 添加</span>
+    <div class="progress ${over ? 'is-over' : ''}" role="progressbar"
+         aria-label="今日热量进度" aria-valuemin="0" aria-valuemax="${round1(target)}"
+         aria-valuenow="${round1(eaten)}">
+      <div class="progress__fill ${over ? 'is-over' : ''}" style="width:${Math.min(100, Math.max(0, pct))}%"></div>
+    </div>
+    <p class="progress-note">${esc(note)}</p>
+
+    <form class="entry" autocomplete="off">
+      <label class="sr-only" for="ledgerEntryInput">记一笔：写食物名和热量，或只写热量</label>
+      <input class="entry__input" id="ledgerEntryInput" type="text"
+             placeholder="鸡蛋 70 · 或直接写 350" enterkeyhint="done" autocomplete="off">
+      <button class="entry__submit" type="submit">记一笔</button>
+      <button class="entry__more" type="button" data-act="intake" aria-label="打开完整记账抽屉（历史复用 / 食物词典 / 待分摊）" title="详细记录">详细▾</button>
+    </form>
+
+    <div class="quick">
+      <p class="quick__head" data-quick-toggle="1" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="quickBoard">常吃<span class="quick__toggle">展开</span></p>
+      <div class="quick__body" id="quickBoard">
+        <div class="quick-grid">
+          ${quickItems.map((h, i) => `
+            <div class="quick-item" data-quick="${i}" role="button" tabindex="0" aria-label="记录 ${esc(h.label)} ${round1(h.kcal)} 千卡">
+              <span class="quick-item__label">${esc(h.label)}</span>
+              <span class="quick-item__kcal">${round1(h.kcal)} kcal</span>
+              <button class="quick-item__del" data-delquick="${i}" aria-label="删除 ${esc(h.label)}" title="删除">×</button>
+            </div>`).join('')}
+          <div class="quick-item quick-item--add" data-addquick="1" role="button" tabindex="0" aria-label="添加快捷项">
+            <span class="quick-item__label">＋ 添加</span>
+          </div>
         </div>
-      </div>` : ''}
+      </div>
+    </div>
+
+    <section class="ledger ledger--inset" aria-labelledby="ledgerHead">
+      <header class="ledger__head">
+        <h2 class="ledger__title" id="ledgerHead">今日台账</h2>
+        <p class="ledger__count">${recs.length} 笔</p>
+      </header>
+
+      ${recs.length === 0
+        ? `<div class="ledger__empty">
+             <p>这一页还空着。写一笔，或展开上面的「常吃」点一下。</p>
+             <button class="btn btn--sm btn--primary" data-act="intake">记第一笔</button>
+           </div>`
+        : `<div class="list">${recs.map(r => `
+            <div class="swipe-wrap">
+              <span class="swipe-hint" aria-hidden="true">再滑一次撤销</span>
+              <div class="list__row" data-rec-id="${r.id}">
+                <div class="list__main">
+                  <div class="list__title">${esc(r.raw_input)}</div>
+                  <div class="list__meta">${String(r.created_at || '').slice(11, 16)}</div>
+                </div>
+                <div class="list__value">${round1(r.kcal)}</div>
+                <button class="list__action" data-edit="${r.id}" aria-label="修改这一笔">改</button>
+                ${r.undoable ? `<button class="list__action list__del" data-undo="${r.id}" aria-label="撤销这一笔">撤销</button>` : ''}
+              </div>
+            </div>`).join('')}</div>`}
+
+      <footer class="ledger__foot">
+        <span class="ledger__total-label">合计</span>
+        <span class="ledger__total">${round1(eaten)}</span>
+        <span class="ledger__total-unit">kcal</span>
+      </footer>
+    </section>
+
+    <!-- 记体重：放在台账之后，不占首屏（设计意图见 annual.css 手机重排段） -->
+    <button class="weight-btn ${todayWeight ? 'is-done' : ''}" type="button" data-act="weight">
+      ${todayWeight ? '已称 ' + esc(round1(todayWeight.jin)) + ' 斤 · 再记' : '记体重'}
+    </button>
 
     ${allocs.length > 0 ? `
-      <div class="card">
+      <div class="card ledger__allocs">
         <div class="card__head">
           <span class="card__title"><span class="badge badge--warn">待分摊</span>
           <span style="margin-left:8px">待分摊合计 ${round1(allocSum)} kcal（${allocs.length} 条）</span></span>
@@ -148,54 +189,58 @@ export function render() {
           </div>
         </div>
       </div>` : ''}
-    ${stoppedAllocs.length ? `
-      <div class="card">
-        <div class="card__body">
-          <span class="badge badge--ok">已停止</span>
-          <span style="margin-left:8px">${stoppedAllocs.length} 条分摊已停止，可撤销（撤销会按批精确回退那几日）</span>
-        </div>
-        ${stoppedAllocs.map(a => `
-        <div class="card__foot" style="justify-content:space-between;align-items:center">
-          <span style="font-size:13px;color:var(--text-2)">${esc(a.start_date)} ~ ${esc(a.stop_date || '')} · ${round1(a.total_kcal)} kcal</span>
-          <button class="btn btn--sm btn--danger" data-act="undoAlloc" data-batch="${esc(a.batch_id)}">撤销分摊</button>
-        </div>`).join('')}
-      </div>` : ''}
-
-    <div class="card">
-      <div class="card__head"><span class="card__title">最近记录</span><span class="card__title" style="color:var(--text-3);font-weight:400">${recs.length} 条</span></div>
-      <div class="card__body">
-        ${recs.length === 0
-          ? `<div class="empty"><div class="empty__text">今天还没记东西</div><div class="empty__action"><button class="btn btn--sm btn--primary" data-act="intake">记第一笔</button></div></div>`
-          : `<div class="list">${recs.map(r => `
-              <div class="swipe-wrap">
-                <span class="swipe-hint" aria-hidden="true">再滑一次撤销</span>
-                <div class="list__row" data-rec-id="${r.id}">
-                  <div class="list__main">
-                    <div class="list__title">${esc(r.raw_input)}</div>
-                    <div class="list__meta">${String(r.created_at || '').slice(11, 16)}</div>
-                  </div>
-                  <div class="list__value">${round1(r.kcal)}</div>
-                  <button class="list__action" data-edit="${r.id}">改</button>
-                  ${r.undoable ? `<button class="list__action" data-undo="${r.id}">撤销</button>` : ''}
-                </div>
-              </div>`).join('')}</div>`}
-      </div>
-    </div>
   `;
 
   // 手势滑动后吞掉浏览器随之派发的 click，否则会误触行内的「改 / 撤销」按钮
   // （实测：不拦截时第一次左滑就直接撤销了记录）
   let suppressClickUntil = 0;
+  // 第二次左滑本身即确认，程序化触发的撤销不再弹 confirmSheet
+  let swipeFiredUndo = false;
   container.addEventListener('click', (e) => {
     if (Date.now() < suppressClickUntil) { e.stopPropagation(); e.preventDefault(); }
   }, true);
 
-  // 键盘可达性：role="button" 的顶条用 Enter/Space 触发（与 quick-item 同模式）
+  // 键盘可达性：role="button" 的常吃折叠头 / 快捷项用 Enter、Space 触发
   container.addEventListener('keydown', (e) => {
-    const b = e.target.closest('.unclosed-banner');
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    // 焦点在快捷项内的「×」删除按钮上时交给原生按钮处理，不要冒泡触发外层记录
+    if (e.target.closest('.quick-item__del')) return;
+    const b = e.target.closest('.quick__head[data-quick-toggle], .quick-item[data-quick], .quick-item--add');
     if (!b) return;
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); }
+    e.preventDefault();
+    b.click();
   });
+
+  // 记一笔：输入行手动快速路径（解析输入直接落账，复杂需求走「详细▾」完整抽屉）
+  const entryForm = container.querySelector('.entry');
+  const entryInput = container.querySelector('.entry__input');
+  entryForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = entryInput.value.trim();
+    if (!v) return;
+    try {
+      recordIntake(v);
+      toast('已记录', 'success');
+      entryInput.value = '';
+      rerender();
+    } catch (err) { toast(err.message, 'error'); }
+  });
+
+  // 常吃区默认折叠：点头部展开 / 收起
+  const quickBox = container.querySelector('.quick');
+  const quickHead = container.querySelector('.quick__head');
+  const quickToggleLabel = container.querySelector('.quick__toggle');
+  const setQuickOpen = (open) => {
+    quickBox.classList.toggle('is-open', open);
+    quickHead.setAttribute('aria-expanded', String(open));
+    if (quickToggleLabel) quickToggleLabel.textContent = open ? '收起' : '展开';
+  };
+  if (quickHead) {
+    quickHead.addEventListener('click', (e) => {
+      e.preventDefault();
+      setQuickOpen(!quickBox.classList.contains('is-open'));
+    });
+  }
 
   container.addEventListener('click', async (e) => {
     const del = e.target.closest('[data-delquick]');
@@ -237,10 +282,9 @@ export function render() {
 
     const act = t.dataset.act;
     if (act === 'hardRefresh') { await hardRefresh(); return; }
-    if (act === 'gotoSettings') { window.app.navigate('settings'); return; } // 未日结顶条 → 设置页「手动结束今天」
-    if (act === 'intake') openIntakeSheet();
-    else if (act === 'weight') openWeightSheet();
-    else if (act === 'stopAlloc') {
+    if (act === 'intake') { openIntakeSheet(); return; }
+    if (act === 'weight') { openWeightSheet(); return; }
+    if (act === 'stopAlloc') {
       const a = getStore().allocation.find(x => String(x.id) === String(t.dataset.id) && x.status === 'open');
       if (!a) return;
       try {
@@ -248,17 +292,19 @@ export function render() {
         toast(`已分摊 ${r.days} 天，每天 ${round1(r.perDay)} kcal`, 'success');
         rerender();
       } catch (err) { toast(err.message, 'error'); }
-    } else if (act === 'undoAlloc') {
-      if (!t.dataset.batch) return; // 撤销必须按 batch_id 精确定位，不允许空值
-      const ok = await confirmSheet({ title: '撤销分摊', text: '撤销本次分摊会删除已分摊的每日记录，确定吗？', danger: true });
-      if (ok) {
-        try {
-          const r = undoAllocationBatch(t.dataset.batch);
-          toast(`已撤销 ${r.removedCount} 条分摊记录`, 'success');
-        } catch (err) { toast(err.message, 'error'); }
-        rerender();
+      return;
+    }
+    if (t.dataset.undo) {
+      // 显式点「撤销」按钮要二次确认；左滑两次触发时 swipeFiredUndo=true，跳过弹窗（两次滑动本身即确认）
+      if (!swipeFiredUndo) {
+        const ok = await confirmSheet({
+          title: '撤销记录',
+          text: '撤销这一笔？当日合计会相应退回。',
+          danger: true,
+          okText: '撤销',
+        });
+        if (!ok) return;
       }
-    } else if (t.dataset.undo) {
       try {
         const rec = undoIntake(Number(t.dataset.undo));
         toast(`已撤销 ${round1(rec.kcal)} kcal`, 'success');
@@ -267,7 +313,7 @@ export function render() {
     }
   });
 
-  // —— 最近记录：向左滑动两次撤销（触摸与鼠标拖拽都支持）——
+  // —— 今日台账：向左滑动两次撤销（触摸与鼠标拖拽都支持）——
   // 第一次滑过阈值 → 行停在 -88px 并显示「再滑一次撤销」；4 秒内第二次滑过阈值 → 执行撤销。
   // 垂直滚动优先（|dx| 不超过 |dy| 就放弃接管），不会干扰页面滚动。
   const SWIPE_TRIGGER = 56;   // 触发阈值 px
@@ -327,11 +373,14 @@ export function render() {
         armedTimer = setTimeout(() => clearArmed(false), 4000);
         return;
       }
-      // 第二次滑够 → 真正撤销（复用既有按钮逻辑，避免重复实现）
+      // 第二次滑够 → 真正撤销：标记跳过 confirmSheet（两次滑动即确认），复用按钮的撤销分支
       clearArmed(false);
       const btn = row.querySelector('[data-undo]');
-      // 先临时解除 click 抑制，否则这次程序化 click 会被自己吞掉（实测踩过）
-      if (btn) { suppressClickUntil = 0; btn.click(); suppressClickUntil = Date.now() + 500; }
+      if (btn) {
+        suppressClickUntil = 0;
+        swipeFiredUndo = true;
+        try { btn.click(); } finally { swipeFiredUndo = false; suppressClickUntil = Date.now() + 500; }
+      }
       return;
     }
     // 没滑够：回弹
