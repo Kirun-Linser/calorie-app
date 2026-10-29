@@ -30,4 +30,23 @@
   --shadow-toast:0 8px 24px rgba(0,0,0,.35);
   /* 焦点环 */
   --focus-ring:0 0 0 3px var(--accent-soft);
+
+  /* ===== 账本版今日页（annual port 20261029，worker A 追加）===== */
+  /* soot/paper 双区色阶：深色首屏（一个数字）+ 纸白台账（一行一笔） */
+  --soot:#0f0f0f;    /* 深色底（今日页首屏，替代 --bg） */
+  --soot-2:#191919;  /* 深色二级：输入框/常吃格 */
+  --soot-3:#242424;  /* 深色描边/进度槽 */
+  --paper:#ffffff;   /* 纸白台账底 */
+  --paper-2:#f2f2f2; /* 纸白二级：悬浮底 */
+  --paper-3:#e4e4e4; /* 台账横线 */
+  --ink:#ffffff;     /* 深色区主文字 */
+  --ink-2:#b8b8b8;   /* 深色区次文字 */
+  --ink-3:#666666;   /* 纸白区辅助文字（白底上 5.7:1 达标；深色底上禁用，仅 3.3:1） */
+  --ink-note:#9a9a9a;/* 深色区状态提示行专用（#0f0f0f 上 4.5:1 达标） */
+  /* 账本版字号：主数字/合计用 clamp，台账标题手机版 22px */
+  --t-hero:clamp(3.5rem,21vw,5.5rem);
+  --t-total:clamp(1.75rem,8vw,2.25rem);
+  --t-head:1.375rem;
+  /* 系统衬线栈：零字体资产，数字/标题/合计共用 */
+  --serif:Georgia,"Songti SC","Noto Serif SC","SimSun",serif;
 }
