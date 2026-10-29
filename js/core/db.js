@@ -231,6 +231,11 @@ export function addFood(name, unit_weight, unit_kcal) {
   } else {
     s.food_dict.push({ name, unit_weight, unit_kcal });
   }
+  // 用户主动把某个种子食物加回来 → 撤销它的墓碑，否则该名字一旦因数据损坏从词典丢失，
+  // 补种会被墓碑拦住、永远不恢复（审计 audit1 B6 指出的问题）。
+  if (Array.isArray(s.meta && s.meta.food_seed_deleted) && s.meta.food_seed_deleted.includes(name)) {
+    s.meta.food_seed_deleted = s.meta.food_seed_deleted.filter(n => n !== name);
+  }
   saveDB();
 }
 
