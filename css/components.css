@@ -635,7 +635,8 @@ input[type="range"].input::-moz-range-track { border: none; background: var(--bg
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--sp-4);
-  margin-bottom: var(--sp-5);
+  /* 收紧：原 --sp-5(20px)。手机首屏高度预算紧，头部留白让位给明细与合计。 */
+  margin-bottom: var(--sp-3);
 }
 .view--ledger .wordmark {
   font-family: var(--serif);
@@ -674,7 +675,7 @@ input[type="range"].input::-moz-range-track { border: none; background: var(--bg
 .view--ledger .hero {
   text-align: left;
   padding: 0;
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-2);
 }
 .view--ledger .hero__label {
   font-size: var(--fs-13);
@@ -729,7 +730,7 @@ input[type="range"].input::-moz-range-track { border: none; background: var(--bg
 .view--ledger .progress-note {
   font-size: var(--fs-13);
   color: var(--ink-note);   /* 对比度修正：#666 在 soot 上仅 3.3:1，原型作者已修，此处用 4.5:1 达标的 --ink-note */
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-3);   /* 收紧：原 --sp-5(20px)，把高度让给台账明细与合计 */
   min-height: 1.5em;
 }
 
@@ -886,7 +887,10 @@ input[type="range"].input::-moz-range-track { border: none; background: var(--bg
 .view--ledger .ledger .list { display: flex; flex-direction: column; gap: 0; }
 .view--ledger .ledger .list__row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  /* ⚠️ 四列：明细主体 + 热量 + 「改」+ 「撤销」。原写 3 列，而 today.js 每行有 4 个
+     子元素（list__main / list__value / data-edit / data-undo），第 4 个被挤到第二行、
+     撤销按钮掉到行下方居中，并压住下一行与合计（截图实测 2026-10-29）。 */
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: baseline;
   gap: var(--sp-3);
   padding: 11px 0;
