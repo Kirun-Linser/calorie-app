@@ -110,28 +110,10 @@ export function render() {
     <form class="entry" autocomplete="off">
       <label class="sr-only" for="ledgerEntryInput">记一笔：写食物名和热量，或只写热量</label>
       <input class="entry__input" id="ledgerEntryInput" type="text"
-             placeholder="鸡蛋 70 · 或直接写 350" enterkeyhint="done" autocomplete="off">
+             placeholder="鸡蛋 70" enterkeyhint="done" autocomplete="off">
       <button class="entry__submit" type="submit">记一笔</button>
       <button class="entry__more" type="button" data-act="intake" aria-label="打开完整记账抽屉（历史复用 / 食物词典 / 待分摊）" title="详细记录">详细▾</button>
     </form>
-
-    <div class="quick">
-      <p class="quick__head" data-quick-toggle="1" role="button" tabindex="0"
-         aria-expanded="false" aria-controls="quickBoard">常吃<span class="quick__toggle">展开</span></p>
-      <div class="quick__body" id="quickBoard">
-        <div class="quick-grid">
-          ${quickItems.map((h, i) => `
-            <div class="quick-item" data-quick="${i}" role="button" tabindex="0" aria-label="记录 ${esc(h.label)} ${round1(h.kcal)} 千卡">
-              <span class="quick-item__label">${esc(h.label)}</span>
-              <span class="quick-item__kcal">${round1(h.kcal)} kcal</span>
-              <button class="quick-item__del" data-delquick="${i}" aria-label="删除 ${esc(h.label)}" title="删除">×</button>
-            </div>`).join('')}
-          <div class="quick-item quick-item--add" data-addquick="1" role="button" tabindex="0" aria-label="添加快捷项">
-            <span class="quick-item__label">＋ 添加</span>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <section class="ledger ledger--inset" aria-labelledby="ledgerHead">
       <header class="ledger__head">
@@ -169,6 +151,26 @@ export function render() {
     <button class="weight-btn ${todayWeight ? 'is-done' : ''}" type="button" data-act="weight">
       ${todayWeight ? '已称 ' + esc(round1(todayWeight.jin)) + ' 斤 · 再记' : '记体重'}
     </button>
+
+    <!-- 常吃：也在台账之后。原在台账前占 73px（57 高 + 16 边距），把明细与合计顶到
+         tabbar 之下（截图实测：记 3 笔时合计被遮）。记账与看账优先，常吃是次要入口。 -->
+    <div class="quick">
+      <p class="quick__head" data-quick-toggle="1" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="quickBoard">常吃<span class="quick__toggle">展开</span></p>
+      <div class="quick__body" id="quickBoard">
+        <div class="quick-grid">
+          ${quickItems.map((h, i) => `
+            <div class="quick-item" data-quick="${i}" role="button" tabindex="0" aria-label="记录 ${esc(h.label)} ${round1(h.kcal)} 千卡">
+              <span class="quick-item__label">${esc(h.label)}</span>
+              <span class="quick-item__kcal">${round1(h.kcal)} kcal</span>
+              <button class="quick-item__del" data-delquick="${i}" aria-label="删除 ${esc(h.label)}" title="删除">×</button>
+            </div>`).join('')}
+          <div class="quick-item quick-item--add" data-addquick="1" role="button" tabindex="0" aria-label="添加快捷项">
+            <span class="quick-item__label">＋ 添加</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     ${allocs.length > 0 ? `
       <div class="card ledger__allocs">
