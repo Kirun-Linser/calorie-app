@@ -570,3 +570,25 @@ input[type="range"].input::-moz-range-track { border: none; background: var(--bg
   inset: -12px -6px;        /* 20 + 24 = 44px 高；横向各扩 6px，与相邻按钮不相交 */
 }
 .list__action:active { background: var(--bg-elev-2); }
+
+/* ===== 未日结顶条（今日页顶部提醒） ===== */
+/* 触控目标 ≥44px；复用 warning token；点击整条跳设置页「手动结束今天」 */
+.unclosed-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-13);
+  cursor: pointer;
+  min-height: 44px;
+  box-sizing: border-box;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.unclosed-banner:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
