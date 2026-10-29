@@ -261,3 +261,34 @@ export function historicalAverage() {
   const avg = closed.reduce((s, r) => s + r.total_kcal, 0) / closed.length;
   return { days: closed.length, avg };
 }
+
+// ===== 未日结顶条判定 =====
+// 「有未日结的日」= 存在历史日 D，满足：
+//   1. D < state.logical_date（严格早于当前逻辑日；logical_date 已过 04:00 边界处理，
+//      0–4 点时 logical_date 还没推进到真实今天，前一天通常就是"还没轮到结算"的日子，天然不算）
+//   2. D 有该天数据：getIntakeRecordsByDate(D).length > 0，或 daily_records[D] 有非空内容
+//      （total_kcal 非 0 / 有 closed 字段之外的有效字段）
+//   3. daily_records[D].closed_at == null（未日结；被 reopenDay 重开的日子 closed_at 已清空，
+//      天然满足"未日结"——用户故意回去改它，提示应亮，这是正确行为）
+// 只找"有数据但没日结"的日子：追平循环补建的空壳记录（无数据）不算，避免误报。
+export function getUnclosedDays() {
+  const state = getAppState();
+  const today = state.logical_date;
+  return getAllDailyRecords()
+    .filter(r => {
+      if (!(r.logical_date < today)) return false; // 只看历史日
+      if (r.closed_at) return false;               // 已日结
+      const hasIntake = getIntakeRecordsByDate(r.logical_date).length > 0;
+      // 空壳记录（追平/closeDay 补建）total_kcal===0 且无明细 → 不算"有数据"；
+      // 只有当天真记过东西（明细存在）或累计非 0（含负冲销）才算。
+      const hasDailyContent = (Number(r.total_kcal) || 0) !== 0;
+      return hasIntake || hasDailyContent;
+    })
+    .map(r => r.logical_date)
+    .sort(); // 字符串升序（YYYY-MM-DD 字典序 = 日期升序）
+}
+
+// 布尔便捷版：等价 getUnclosedDays().length > 0
+export function hasUnclosedDay() {
+  return getUnclosedDays().length > 0;
+}
