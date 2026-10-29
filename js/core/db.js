@@ -314,9 +314,19 @@ const FOOD_SEED = [
 ];
 
 function seedFoodDict() {
-  if (!_store || _store.food_dict.length > 0) return;
+  if (!_store) return;
+  if (!Array.isArray(_store.food_dict)) _store.food_dict = [];
+  if (!_store.meta) _store.meta = {};
+  if (!Array.isArray(_store.meta.food_seed_deleted)) _store.meta.food_seed_deleted = [];
+
+  const existing = new Set(_store.food_dict.map(f => f.name));
+  const deleted = new Set(_store.meta.food_seed_deleted);
+
   for (const [name, w, k] of FOOD_SEED) {
+    if (existing.has(name)) continue; // 不覆盖已存在的同名项（用户改过的必须保留）
+    if (deleted.has(name)) continue;  // 墓碑名单里的种子项不复活
     _store.food_dict.push({ name, unit_weight: w, unit_kcal: k });
+    existing.add(name);
   }
 }
 
@@ -362,6 +372,13 @@ export function deleteFood(name) {
   const i = s.food_dict.findIndex(x => x.name === name);
   if (i < 0) return false;
   s.food_dict.splice(i, 1);
+  // 种子项删除后记入墓碑，防止下次补种时被复活（用户改过的种子项按 name 判，仍视为种子名）
+  const isSeedName = FOOD_SEED.some(([n]) => n === name);
+  if (isSeedName) {
+    if (!s.meta) s.meta = {};
+    if (!Array.isArray(s.meta.food_seed_deleted)) s.meta.food_seed_deleted = [];
+    if (!s.meta.food_seed_deleted.includes(name)) s.meta.food_seed_deleted.push(name);
+  }
   saveDB();
   return true;
 }
