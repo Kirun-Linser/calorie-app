@@ -14,8 +14,9 @@
 // v15：应用显示名改为 K++（manifest/index.html/settings 关于）→ bump。
 // v16：撤销分摊区独立渲染（有 open 也能撤）+ 负号/全角归一化（手机输入法负号）+ 负热量提示 → bump。
 // v17：补种守卫 + 墓碑 + 未日结顶条 + 护栏（tests/sw-assets.test.js）→ bump。
+// v18：今日页改为「账本版」（today.js + components.css + tokens.css 大改）+ 宽屏 tabbar 对齐 → bump。
 // ⚠️ 改动清单或文件名时务必同步 bump CACHE 版本，否则老客户端会一直吃旧缓存。
-const CACHE = 'calorie-app-v17';
+const CACHE = 'calorie-app-v18';
 const ASSETS = [
   './', './index.html', './manifest.json',
 
