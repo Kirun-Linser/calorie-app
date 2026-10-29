@@ -173,6 +173,14 @@
   line-height: 1;
   display: flex; align-items: center; justify-content: center;
 }
+/* 触摸热区撑到 ≥44px（视觉仍是 22px 小圆点）：删除是不可逆操作，22px 太易误触。
+   伪元素四向各扩 11px → 22+22=44。审计 audit3 V2 指出。 */
+.quick-item__del::after {
+  content: "";
+  position: absolute;
+  inset: -11px;
+  border-radius: 50%;
+}
 
 .list { display: flex; flex-direction: column; gap: var(--sp-2); }
 .list__row {
@@ -910,13 +918,13 @@ input[type="range"].input::-moz-range-track { border: none; background: var(--bg
   font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: -0.01em;
 }
-.view--ledger .ledger .list__value.is-over { color: var(--danger); }
+.view--ledger .ledger .list__value.is-over { color: var(--danger-ink); }
 .view--ledger .ledger .list__action {
   color: var(--ink-3);
   font-size: var(--fs-13);
 }
 .view--ledger .ledger .list__action:active { background: var(--paper-2); }
-.view--ledger .ledger .list__action[data-undo] { color: var(--danger); }
+.view--ledger .ledger .list__action[data-undo] { color: var(--danger-ink); }
 /* worker B 的撤销按钮带 .list__action.list__del 双类：热区 ≥40px（视觉尺寸不变） */
 .view--ledger .ledger .list__del {
   position: relative;
