@@ -13,8 +13,9 @@
 // v14：分摊 UI 接线（多条卡片 + createAllocationFromKcal 修正单位 + 停止后可撤销）→ bump。
 // v15：应用显示名改为 K++（manifest/index.html/settings 关于）→ bump。
 // v16：撤销分摊区独立渲染（有 open 也能撤）+ 负号/全角归一化（手机输入法负号）+ 负热量提示 → bump。
+// v17：补种守卫 + 墓碑 + 未日结顶条 + 护栏（tests/sw-assets.test.js）→ bump。
 // ⚠️ 改动清单或文件名时务必同步 bump CACHE 版本，否则老客户端会一直吃旧缓存。
-const CACHE = 'calorie-app-v16';
+const CACHE = 'calorie-app-v17';
 const ASSETS = [
   './', './index.html', './manifest.json',
 
