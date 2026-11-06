@@ -1,0 +1,1888 @@
+/* ===== 组件样式 ===== */
+.app-shell {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.app-main {
+  flex: 1 1 auto;
+  padding: var(--sp-4);
+  padding-bottom: calc(var(--tabbar-h) + var(--sp-4) + var(--safe-bottom));
+}
+.tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  /* 宽屏下与内容栏（--maxw）同宽并居中：原来 left/right:0 让它横跨整个视口，
+     内容却在中间 520px 里，桌面端图标散在三处（实测 1024 差 504px、1440 差 920px）。
+     用 margin-inline:auto 而非 transform，避免与将来的动画冲突。 */
+  margin-inline: auto;
+  max-width: var(--maxw);
+  height: calc(var(--tabbar-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--bg-elev);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 50;
+}
+.tabbar__item {
+  flex: 1 1 0;
+  min-height: var(--tabbar-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  color: var(--text-3);
+  font-size: var(--fs-11);
+  transition: color var(--dur-1) var(--ease);
+}
+.tabbar__item.is-active { color: var(--accent); }
+.tabbar__item.is-active svg { color: currentColor; }
+.tabbar__icon { display: flex; align-items: center; justify-content: center; line-height: 1; }
+.tabbar__label { font-size: var(--fs-11); }
+
+.view { padding: var(--sp-2) 0; }
+.view__head { margin-bottom: var(--sp-4); position: relative; padding-right: 52px; }
+.view__title { font-size: var(--fs-22); font-weight: 700; letter-spacing: -0.01em; }
+.view__sub { font-size: var(--fs-13); color: var(--text-2); margin-top: var(--sp-1); }
+/* 右上角「刷新」：手机上 PWA 常因旧 SW 缓存看不到新版本，点了会清缓存并重载 */
+.view__refresh {
+  position: absolute;
+  top: 0; right: 0;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text-2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.view__refresh:active { background: var(--bg-elev-2); transform: rotate(90deg); }
+.view__refresh.is-busy { pointer-events: none; opacity: .5; }
+
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-3); }
+.card__title { font-size: var(--fs-15); font-weight: 600; }
+.card__body { }
+.card__foot { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--line-soft); }
+
+.hero { text-align: center; padding: var(--sp-5) var(--sp-4); }
+.hero__value {
+  font-size: var(--fs-34);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-num);
+}
+.hero__unit { font-size: var(--fs-15); color: var(--text-2); margin-left: var(--sp-1); }
+.hero__meta { font-size: var(--fs-13); color: var(--text-2); margin-top: var(--sp-2); }
+.hero__row { display: flex; align-items: baseline; justify-content: center; gap: var(--sp-2); }
+.hero__tip { font-size: var(--fs-12); color: var(--text-3); margin-top: var(--sp-2); }
+
+.progress {
+  height: 8px;
+  background: var(--bg-sunken);
+  border-radius: var(--r-full);
+  overflow: hidden;
+  margin: var(--sp-3) 0;
+}
+.progress__fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--r-full);
+  transition: width var(--dur-2) var(--ease);
+  width: 0%;
+}
+.progress__fill.is-over { background: var(--danger); }
+.progress__fill.is-ok { background: var(--ok); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-15);
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  color: var(--text);
+  transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.btn:active { transform: scale(0.97); }
+.btn--primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  min-height: 52px;
+}
+.btn--ok { background: var(--ok); color: var(--accent-ink); border-color: var(--ok); }
+.btn--ghost { background: transparent; border-color: var(--line); color: var(--text-2); }
+.btn--quiet { background: var(--bg-elev-2); border-color: transparent; color: var(--text-2); }
+.btn--danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn--block { width: 100%; }
+.btn--icon { min-width: 44px; padding: 0; }
+.btn--sm { min-height: 36px; font-size: var(--fs-13); padding: 0 var(--sp-3); }
+.btn-row { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-2);
+}
+.quick-item {
+  position: relative;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  text-align: center;
+}
+.quick-item__label { font-size: var(--fs-13); font-weight: 600; color: var(--text); }
+.quick-item__kcal { font-size: var(--fs-11); color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+.quick-item__del {
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  border: 2px solid var(--bg);
+  font-size: var(--fs-13);
+  line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+/* 触摸热区撑到 ≥44px（视觉仍是 22px 小圆点）：删除是不可逆操作，22px 太易误触。
+   伪元素四向各扩 11px → 22+22=44。审计 audit3 V2 指出。 */
+.quick-item__del::after {
+  content: "";
+  position: absolute;
+  inset: -11px;
+  border-radius: 50%;
+}
+
+.list { display: flex; flex-direction: column; gap: var(--sp-2); }
+.list__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  min-height: 52px;
+  /* 左滑撤销：只接管水平手势，垂直滚动仍交给页面 */
+  position: relative;
+  z-index: 1;
+  touch-action: pan-y;
+  transition: transform var(--dur-1) var(--ease);
+}
+.list__row.is-swiping { transition: none; }
+/* 滑动容器：hint 固定在右侧不随行位移，行左移后露出来 */
+.swipe-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+}
+.swipe-hint {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.swipe-wrap.is-armed .swipe-hint { opacity: 1; }
+.list__main { flex: 1 1 auto; min-width: 0; }
+.list__title { font-size: var(--fs-15); font-weight: 500; color: var(--text); }
+.list__meta { font-size: var(--fs-12); color: var(--text-2); margin-top: 2px; }
+.list__value { font-weight: 700; color: var(--accent); font-size: var(--fs-15); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.list__action { flex-shrink: 0; }
+
+.field { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.field__label { font-size: var(--fs-13); color: var(--text-2); font-weight: 500; }
+.field__hint { font-size: var(--fs-12); color: var(--text-3); }
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-elev-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-15);
+  caret-color: var(--accent);
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+.chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.chip {
+  min-height: 36px;
+  padding: 0 var(--sp-3);
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-elev);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  font-size: var(--fs-13);
+  transition: background-color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.chip.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.segmented {
+  display: inline-flex;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 4px;
+  gap: 4px;
+}
+.segmented__item {
+  min-height: 36px;
+  padding: 0 var(--sp-3);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  font-size: var(--fs-13);
+  color: var(--text-2);
+  transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.segmented__item.is-active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-2) var(--ease);
+}
+.sheet-mask.is-open { opacity: 1; pointer-events: auto; }
+/* 抽屉打开时锁定背景滚动，配合 JS 记录/还原 scrollY 防穿透 */
+/* scrollbar-gutter: stable —— 桌面端滚动条消失时页面不横向抖 15px */
+body.modal-open { overflow: hidden; scrollbar-gutter: stable; }
+body.modal-open .sheet-mask { touch-action: none; overscroll-behavior: contain; }
+.sheet {
+  width: 100%;
+  max-width: var(--maxw);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-4) + var(--safe-bottom));
+  max-height: 88vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform var(--dur-3) var(--ease);
+  box-shadow: var(--shadow-sheet);
+}
+.sheet-mask.is-open .sheet { transform: translateY(0); }
+.sheet__handle {
+  width: 36px; height: 4px;
+  background: var(--line);
+  border-radius: var(--r-full);
+  margin: 0 auto var(--sp-3);
+}
+.sheet__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-3); }
+.sheet__title { font-size: var(--fs-17); font-weight: 700; }
+.sheet__body { }
+.sheet__foot { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--line-soft); }
+
+.toast {
+  position: fixed;
+  bottom: calc(var(--sp-6) + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg-elev-2);
+  color: var(--text);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-13);
+  font-weight: 500;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  max-width: 90vw;
+  box-shadow: var(--shadow-toast);
+  border: 1px solid var(--line);
+  transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+}
+.toast.is-show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast--success { border-color: var(--ok); color: var(--ok); }
+.toast--error { border-color: var(--danger); color: var(--danger); }
+
+.empty { text-align: center; padding: var(--sp-8) var(--sp-4); color: var(--text-3); }
+.empty__icon { font-size: var(--fs-34); margin-bottom: var(--sp-3); }
+.empty__text { font-size: var(--fs-13); margin-bottom: var(--sp-4); }
+.empty__action { }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-full);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  background: var(--bg-elev-2);
+  color: var(--text-2);
+  border: 1px solid var(--line);
+}
+.badge--ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.badge--warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.badge--over { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
+
+.chart {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  min-height: 160px;
+  position: relative;
+}
+.chart__legend { font-size: var(--fs-12); color: var(--text-2); margin-bottom: var(--sp-2); display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+.chart__axis { font-size: var(--fs-11); color: var(--text-3); }
+.chart__empty { text-align: center; color: var(--text-3); font-size: var(--fs-13); padding: var(--sp-6) 0; }
+
+.divider { height: 1px; background: var(--line); margin: var(--sp-4) 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+/* ⚠️ 2026-11-03 修「手机上滑动莫名其妙跑偏」的第二个来源（真 bug，非猜测）：
+   charts.js 会生成 **data table**.sr-only 作为图表的无障碍数据表。
+   但 <table> 是 display:table，**不响应上面的 width:1px** —— 它会按内容自行撑开。
+   40 天数据 = 40 行 × 2 列，实测把首屏推宽 **30px**（元素右边界到 417px，视口 390px），
+   于是整个页面变成可横向拖动 ⇒ 用户手指一划页面就"跑偏"。
+   修法：给 table 加上 display:block 让 width:1px 生效，并再次锁死 max-width。
+   （用 display:block 而不是 table 布局，是因为它本来只是给读屏用的，不需要表格排版
+   以外的一切视觉行为 —— 读屏仍能正确朗读 table/tr/td 的语义。） */
+table.sr-only,
+.sr-only[data-table],
+.sr-only > table {
+  display: block;
+  width: 1px;
+  max-width: 1px;
+  table-layout: fixed;
+}
+/* 兜底：任何以 .sr-only 隐藏的容器，其内部元素都不许撑破 1px 盒子 */
+.sr-only *, .sr-only table, .sr-only tr, .sr-only td, .sr-only th {
+  max-width: 1px;
+  overflow: hidden;
+}
+
+@media (max-width: 360px) {
+  .quick-grid { grid-template-columns: repeat(3, 1fr); }
+  .hero__value { font-size: var(--fs-22); }
+}
+
+/* ==========================================================================
+   v2.1 集成补丁（Lead 追加）
+   原因：写者 #2 与写者 #4 并行产出，缺 4 个类名；另有 3 处实拍缺陷（4 列挤、
+   删除按钮压住相邻卡片、抽屉内元素贴太紧）。追加在后，按层叠顺序覆盖上文。
+   ========================================================================== */
+
+/* 缺类补全 */
+.preview { min-height: var(--sp-5); font-size: var(--fs-13); color: var(--text-2); }
+.preview b { color: var(--accent); font-weight: 700; }
+.hint { font-size: var(--fs-12); line-height: 1.6; color: var(--text-3); }
+.confirm-text { font-size: var(--fs-15); line-height: 1.6; color: var(--text-2); margin: 0; }
+
+/* 抽屉内容节奏：内部元素之间统一留白（原 .sheet__body 是空规则） */
+.sheet__body > * + * { margin-top: var(--sp-3); }
+.sheet__body > .btn--block + .btn--block { margin-top: var(--sp-2); }
+.sheet__body .field > .field__label + .input { margin-top: var(--sp-2); }
+
+/* 快捷项：390px 下 4 列会让「米饭一碗」这类 4 字标签挤行 → 3 列 */
+.quick-grid { grid-template-columns: repeat(3, 1fr); }
+
+.quick-item {
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.quick-item:active { background: var(--bg-elev-2); border-color: var(--line); }
+.quick-item__label { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 删除按钮：原样式是 22px 纯红实心 + top/right 负 6px，压在相邻卡片上且视觉噪音大。
+   改为右上角内缩、低饱和底、常态不抢眼，按下才显红。 */
+.quick-item__del {
+  top: var(--sp-1);
+  right: var(--sp-1);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-elev-2);
+  color: var(--text-3);
+  border: 1px solid var(--line);
+  font-size: var(--fs-11);
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.quick-item__del:active { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+/* 「＋ 添加」卡片：与快捷项同尺寸，虚线描边表示"新建"语义 */
+.quick-item--add {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-3);
+}
+.quick-item--add .quick-item__label { color: var(--text-3); font-weight: 500; }
+.quick-item--add:active { background: var(--bg-elev); }
+
+/* 区块之间的节奏：按钮行之后紧跟网格/卡片时不留白会粘连 */
+.btn-row + .quick-grid,
+.chips + .btn,
+.chips + .btn--block { margin-top: var(--sp-3); }
+.btn--block + .btn--block { margin-top: var(--sp-2); }
+
+/* range 滑块：浏览器默认是系统蓝（#0075FF），与深色 teal 主题冲突，必须自绘 */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;              /* 触摸目标 */
+  background: transparent;
+  cursor: pointer;
+  margin: var(--sp-1) 0;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -9px;          /* (4+2)/2 - 20/2 */
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+input[type="range"]:active::-webkit-slider-thumb { background: var(--accent-strong); }
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* range 同时带 .input 类时会继承 48px 内边距 + 边框 + 底色，形成一圈大外框。
+   这里把 range 从 .input 外观中剥离，只保留滑块本身。 */
+input[type="range"].input {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+input[type="range"].input:focus { box-shadow: none; }
+input[type="range"].input::-webkit-slider-runnable-track { border: none; background: var(--bg-elev-2); }
+input[type="range"].input::-moz-range-track { border: none; background: var(--bg-elev-2); }
+
+/* ==========================================================================
+   v2.2 补丁（Lead 追加）
+   ① 周总结抽屉用到 .stat* 与 .section-title，设计系统里没有 → 补齐
+   ② .list__value.is-over：超标数值标红
+   ③ --text-3 对比度不足：卡片底 #11171D 上仅 4.22:1（WCAG AA 需 4.5）
+   ========================================================================== */
+
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.stat {
+  padding: var(--sp-3);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  text-align: center;
+}
+.stat__label { font-size: var(--fs-11); color: var(--text-3); line-height: 1.4; }
+.stat__value {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-17);
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.stat__unit { font-size: var(--fs-11); font-weight: 400; color: var(--text-3); }
+.stat__value.is-over { color: var(--danger); }
+
+.section-title {
+  margin: var(--sp-4) 0 var(--sp-2);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--text-3);
+}
+
+.list__value.is-over { color: var(--danger); }
+
+/* 记录行里「撤销」是破坏性操作，与「改」区分开（同一形态、不同语义色） */
+.list__action[data-undo] { color: var(--danger); }
+.list__action[data-undo]:active { background: var(--danger-soft); }
+/* 词典行里的「删」同样是破坏性操作，与「改」区分 */
+.list__action[data-fdel] { color: var(--danger); }
+.list__action[data-fdel]:active { background: var(--danger-soft); }
+
+/* ==========================================================================
+   无障碍修正（设计审查命中项）
+   .list__action 继承 base.css 的 button 重置 → padding:0，实际可点击高度只有
+   文字行高（约 20px），而「改 / 撤销」是并排的两个破坏性相关操作，手机上极易误触。
+   这里用伪元素把热区撑到 44px，**视觉尺寸不变**（不撑高列表行）。
+   ========================================================================== */
+.list__action {
+  position: relative;
+  color: var(--text-2);
+  font-size: var(--fs-13);
+  padding: 0 var(--sp-1);
+  border-radius: var(--r-sm);
+}
+.list__action::after {
+  content: '';
+  position: absolute;
+  inset: -12px -6px;        /* 20 + 24 = 44px 高；横向各扩 6px，与相邻按钮不相交 */
+}
+.list__action:active { background: var(--bg-elev-2); }
+
+/* ===== 未日结顶条（今日页顶部提醒） ===== */
+/* 触控目标 ≥44px；复用 warning token；点击整条跳设置页「手动结束今天」 */
+.unclosed-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-13);
+  cursor: pointer;
+  min-height: 44px;
+  box-sizing: border-box;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.unclosed-banner:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
+
+/* ==========================================================================
+   账本版今日页（annual port 20261029，worker A）
+   原型：kpp-annual-preview/css/annual.css（已验收），翻译进现有 token 体系。
+   结构：深色区（masthead → hero → progress → note → entry → weight → quick 折叠）
+   + 纸白区（ledger：head → list → empty → foot 合计）。
+   全部选择器带 .view--ledger 前缀，只影响账本版今日页，不波及趋势页/设置页。
+   已有契约类（.hero/.list__row/.quick-grid/.btn/.tabbar…）一个不改，只做作用域覆盖。
+   ========================================================================== */
+
+/* ---- 深色区容器：今日页变 soot 底，内容仍受 .app-main 约束 ---- */
+.view--ledger {
+  background: var(--soot);
+  color: var(--ink);
+  /* 抵消 .app-main 的 16px padding + .view 的 8px 上下 padding，深色区满宽贴边、直达 tabbar 顶边 */
+  margin: calc(var(--sp-4) * -1);
+  margin-top: calc(-1 * (var(--sp-4) + var(--sp-2)));
+  margin-bottom: calc(-1 * (var(--tabbar-h) + var(--sp-4) + var(--safe-bottom) + var(--sp-2)));
+  padding: calc(var(--safe-top) + var(--sp-4)) var(--sp-5) var(--sp-6);
+  display: flex;
+  flex-direction: column;
+}
+.view--ledger *::selection { background: var(--accent-soft); }
+
+/* ---- 报头：wordmark + 日期行 + 刷新（44px 触摸目标，复用 .view__refresh 图标可换） ---- */
+.view--ledger .masthead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  /* 收紧：原 --sp-5(20px)。手机首屏高度预算紧，头部留白让位给明细与合计。 */
+  margin-bottom: var(--sp-3);
+}
+.view--ledger .wordmark {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.view--ledger .wordmark__plus { color: var(--accent); }
+.view--ledger .masthead__date {
+  font-size: var(--fs-13);
+  color: var(--ink-2);
+  margin-top: var(--sp-1);
+}
+.view--ledger .masthead__left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.view--ledger .masthead .view__refresh {
+  position: static;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--soot-3);
+  border-radius: 50%;
+  transition: color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.view--ledger .masthead .view__refresh:hover { color: var(--ink); }
+.view--ledger .masthead .view__refresh:active { background: var(--soot-2); transform: rotate(90deg); }
+/* worker B 用 .masthead__refresh + .view__refresh 双类，同规则兜底 */
+.view--ledger .masthead__refresh { flex-shrink: 0; width: 44px; height: 44px; }
+
+/* ---- hero：一个数字占主导（账本版覆盖，不改契约类本身） ---- */
+.view--ledger .hero {
+  text-align: left;
+  padding: 0;
+  margin-bottom: var(--sp-2);
+}
+.view--ledger .hero__label {
+  font-size: var(--fs-13);
+  color: var(--ink-2);
+  margin-bottom: var(--sp-1);
+}
+.view--ledger .hero__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+.view--ledger .hero__value {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: var(--t-hero);
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums lining-nums;
+  margin-left: -0.03em;
+  display: block;
+  color: var(--ink);
+  transition: color var(--dur-2) var(--ease);
+}
+.view--ledger .hero.is-over .hero__value { color: var(--danger); }
+.view--ledger .hero__unit {
+  font-size: var(--fs-13);
+  color: var(--ink-note);
+  letter-spacing: 0.02em;
+}
+.view--ledger .hero__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  font-size: var(--fs-13);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.view--ledger .hero__meta b { font-weight: 600; color: var(--ink); }
+
+/* ---- 进度：无圆角直条（印刷感），teal 填充，超标转 danger ---- */
+.view--ledger .progress {
+  height: 6px;
+  background: var(--soot-3);
+  border-radius: 0;
+  margin: 0 0 var(--sp-2) 0;
+}
+.view--ledger .progress__fill {
+  border-radius: 0;
+  transition: width var(--dur-3) var(--ease);
+}
+.view--ledger .progress-note {
+  font-size: var(--fs-13);
+  color: var(--ink-note);   /* 对比度修正：#666 在 soot 上仅 3.3:1，原型作者已修，此处用 4.5:1 达标的 --ink-note */
+  margin-bottom: var(--sp-3);   /* 收紧：原 --sp-5(20px)，把高度让给台账明细与合计 */
+  min-height: 1.5em;
+}
+
+/* ---- 记一笔：整屏最重要的动作（输入 + teal 提交，min-h 52px） ---- */
+.view--ledger .entry {
+  display: grid;
+  /* ⚠️ 三列：输入区伸缩 + 主按钮 + 「详细▾」次级按钮。
+     原为 1fr auto 两列，today.js 有 3 个子元素时第三个会被挤到第二行，
+     .entry 高度从 52 变 104，把台账顶出首屏（实测 390×844 下合计落到 y=852）。 */
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0;
+  margin-bottom: var(--sp-4);
+}
+.view--ledger .entry__input {
+  font: inherit;
+  font-size: var(--fs-17);
+  color: var(--ink);
+  background: var(--soot-2);
+  border: 1px solid var(--soot-3);
+  border-right: 0;
+  border-radius: 0;
+  padding: 0 var(--sp-4);
+  min-height: 52px;
+  width: 100%;
+  caret-color: var(--accent);
+  transition: border-color var(--dur-1) var(--ease);
+}
+.view--ledger .entry__input::placeholder { color: var(--ink-note); }
+.view--ledger .entry__input:focus { outline: none; border-color: var(--accent); }
+.view--ledger .entry__submit {
+  min-height: 52px;
+  padding: 0 var(--sp-5);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  font-size: var(--fs-17);
+  border-radius: 0;
+  border: 0;
+  transition: filter var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.view--ledger .entry__submit:hover { filter: brightness(1.08); }
+.view--ledger .entry__submit:active { transform: translateY(1px); }
+/* 「详细▾」：抽屉入口，次级按钮 —— 不抢 teal 主按钮的视觉 */
+.view--ledger .entry__more {
+  min-height: 52px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--soot-3);
+  border-left: 0;
+  border-radius: 0;
+  color: var(--ink-2);
+  font-size: var(--fs-13);
+  white-space: nowrap;
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.view--ledger .entry__more:hover { color: var(--ink); border-color: var(--accent); }
+
+/* ---- 记体重：台账之后，不占首屏（40px 次级动作，但 ≥44 触摸目标） ---- */
+.view--ledger .weight-btn {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--soot-3);
+  border-radius: 0;
+  color: var(--ink-2);
+  font-size: var(--fs-13);
+  margin: var(--sp-4) 0 0;
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.view--ledger .weight-btn:hover { color: var(--ink); border-color: var(--accent); }
+
+/* ---- 常吃折叠：默认收起，点开才展开（折叠在 .quick__body 上，不动 .quick-grid 契约） ---- */
+.view--ledger .quick {
+  margin-top: var(--sp-4);
+  border-top: 1px solid var(--soot-3);
+  padding-top: var(--sp-3);
+}
+.view--ledger .quick__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.view--ledger .quick__toggle {
+  margin-left: auto;
+  color: var(--ink-note);
+  font-size: var(--fs-12);
+}
+.view--ledger .quick__body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 260ms var(--ease);
+}
+.view--ledger .quick.is-open .quick__body {
+  max-height: 420px;
+  margin-top: var(--sp-2);
+}
+.view--ledger .quick-item {
+  background: var(--soot-2);
+  border-color: var(--soot-3);
+  min-height: 64px;
+}
+.view--ledger .quick-item__label { color: var(--ink); }
+.view--ledger .quick-item__kcal { color: var(--ink-2); }
+.view--ledger .quick-item__del {
+  background: var(--soot-3);
+  color: var(--ink-2);
+  border-color: var(--soot-3);
+}
+.view--ledger .quick-item__del:active { background: var(--danger); color: var(--paper); border-color: var(--danger); }
+
+/* ---- 纸白台账：整段是白底黑字，与深色区形成反差（视觉核心） ---- */
+.view--ledger .ledger {
+  background: var(--paper);
+  color: var(--soot);
+  padding: var(--sp-5) var(--sp-5) var(--sp-6);
+  flex: 1;
+}
+.view--ledger .ledger--inset {
+  margin: 0;
+  border-top: 0;
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  flex: 0 0 auto;
+}
+.view--ledger .ledger__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-1);
+}
+.view--ledger .ledger__count {
+  font-size: var(--fs-13);
+  color: var(--ink-3);      /* 纸白区：#666 在 #fff 上 5.74:1 达标 */
+  font-variant-numeric: tabular-nums;
+}
+.view--ledger .ledger__title,
+.view--ledger .ledger__head h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: var(--t-head);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--soot);
+}
+/* 台账行：契约类配色覆盖 —— 纸白底上必须用深色（--soot），别用深色区的 --text */
+.view--ledger .ledger .list { display: flex; flex-direction: column; gap: 0; }
+.view--ledger .ledger .list__row {
+  display: grid;
+  /* ⚠️ 四列：明细主体 + 热量 + 「改」+ 「撤销」。原写 3 列，而 today.js 每行有 4 个
+     子元素（list__main / list__value / data-edit / data-undo），第 4 个被挤到第二行、
+     撤销按钮掉到行下方居中，并压住下一行与合计（截图实测 2026-10-29）。 */
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: 11px 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--paper-3);
+  border-radius: 0;
+  min-height: 0;
+  animation: ledger-row-in 320ms var(--ease) both;
+}
+.view--ledger .ledger .list__row:last-child { border-bottom: 1px solid var(--paper-3); }
+/* ⚠️ 入场动画只能用 `translate` 属性，**不能用 transform**（2026-11-03 修「手机上滑动跑偏」）。
+   原因（CDP 探针实测，_shots/probe-anim-result.json）：
+   animation-fill-mode:both 会让关键帧的 `to { transform: none }` 在动画结束后**永久生效**，
+   其优先级高于 element.style.transform。于是 JS 左滑写入 inline `translateX(-88px)` 后，
+   computed 仍是 `matrix(1,0,0,1,0,0)` —— 表现为「红色提示出现了、行却纹丝不动」，
+   用户以为没滑成功，再滑一次就变成**误删记录**。
+   `translate` 与 `transform` 是两个独立的 CSS 属性，可以叠加互不覆盖：
+   入场用 translate、滑动用 transform，问题消失。 */
+@keyframes ledger-row-in {
+  from { opacity: 0; translate: 0 8px; }
+  to { opacity: 1; translate: 0 0; }
+}
+/* 双保险：滑动手势期间彻底关掉入场动画，任何关键帧都不会碰 transform */
+.view--ledger .ledger .list__row.is-swiping,
+.view--ledger .ledger .swipe-wrap.is-armed .list__row {
+  animation: none;
+}
+.view--ledger .ledger .list__main { min-width: 0; }
+.view--ledger .ledger .list__title {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--soot);
+  line-height: 1.35;
+}
+.view--ledger .ledger .list__meta { color: var(--ink-3); font-size: var(--fs-12); }
+.view--ledger .ledger .list__value {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--soot);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.01em;
+}
+.view--ledger .ledger .list__value.is-over { color: var(--danger-ink); }
+.view--ledger .ledger .list__action {
+  color: var(--ink-3);
+  font-size: var(--fs-13);
+}
+.view--ledger .ledger .list__action:active { background: var(--paper-2); }
+.view--ledger .ledger .list__action[data-undo] { color: var(--danger-ink); }
+/* worker B 的撤销按钮带 .list__action.list__del 双类：热区 ≥40px（视觉尺寸不变） */
+.view--ledger .ledger .list__del {
+  position: relative;
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.view--ledger .ledger .list__del::after {
+  content: '';
+  position: absolute;
+  inset: -6px -4px;
+  pointer-events: none;
+}
+.view--ledger .ledger__empty {
+  /* ⚠️ 原 padding: var(--sp-8) 0 var(--sp-2)（上 32px）使空态块高达 144px，
+     把「合计」推出版首屏（实测 390×844 下合计 y=852 > 780）。压到 20px 上边距。 */
+  padding: var(--sp-5) 0 0;
+  font-size: var(--fs-13);
+  color: var(--ink-3);
+  line-height: 1.55;
+}
+.view--ledger .ledger__empty p { margin-bottom: var(--sp-3); }
+.view--ledger .ledger__empty[hidden] { display: none; }
+/* 合计：3px 黑顶线 + serif 合计，贴住台账底部（不做浮动条） */
+.view--ledger .ledger__foot {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 3px solid var(--soot);
+}
+.view--ledger .ledger__total-label {
+  font-size: var(--fs-13);
+  color: var(--ink-3);
+}
+.view--ledger .ledger__total {
+  margin-left: auto;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: var(--t-total);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--soot);
+}
+.view--ledger .ledger__total-unit {
+  font-size: var(--fs-13);
+  color: var(--ink-3);
+}
+
+/* ---- 窄屏（≤360px）：主数字再压一档；entry 改单列 ---- */
+@media (max-width: 360px) {
+  .view--ledger .hero__value { font-size: clamp(3rem, 19vw, 4.5rem); }
+  .view--ledger .entry { grid-template-columns: 1fr; }
+  .view--ledger .entry__input { border-right: 1px solid var(--soot-3); border-bottom: 0; }
+  .view--ledger .entry__submit { width: 100%; }
+}
+
+/* ---- 宽屏（≥780px）：内容居中 520px（.app-shell 已处理宽度，这里只调 padding 节奏） ---- */
+@media (min-width: 780px) {
+  .view--ledger { padding-inline: var(--sp-8); }
+  .view--ledger .ledger--inset { padding-inline: var(--sp-6); }
+}
+
+/* ---- 动效关闭（prefers-reduced-motion: reduce） ---- */
+@media (prefers-reduced-motion: reduce) {
+  .view--ledger .ledger .list__row { animation: none; }
+  .view--ledger .quick__body { transition: none; }
+}
+
+/* ==========================================================================
+   趋势页美化（2026-11-03 · W2 产出，Lead 复核重做 token 与类名对齐后并入）
+   作用域：全部选择器以 .trend- 开头，只影响趋势页，不波及今日页/设置页。
+   三个二级抽屉（总结 / 体重历史 / 修改某天）同在本段。
+   ========================================================================== */
+
+/* ---------- 三档切换条（本周 / 本月 / 全部） ---------- */
+.trend-range {
+  display: flex;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-1);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.trend-range .segmented__item {
+  flex: 1 1 0;
+  min-height: 44px;                  /* 触控热区 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-13);
+  font-weight: 500;
+  color: var(--text-2);
+  background: transparent;
+  border-radius: var(--r-sm);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.trend-range .segmented__item.is-active {
+  color: var(--accent-ink);
+  background: var(--accent);
+  font-weight: 600;
+}
+.trend-range .segmented__item:not(.is-active):active { background: var(--bg-elev-2); }
+
+/* ---------- 总结区 ---------- */
+.trend-summary { margin-top: var(--sp-3); }
+
+.trend-range-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  margin-bottom: var(--sp-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.trend-stat-grid {
+  display: grid;
+  /* ⚠️ 必须是 minmax(0, 1fr)，不能写 1fr（2026-11-03 真机截图实测）：
+     `1fr` 等价于 `minmax(auto, 1fr)`，**最小宽度是内容宽度**，不会收缩。
+     「超标 / 未超 / 无记录」这个标签 +「1/1/5 天」的数值撑开了第三列，
+     整个 grid 超出容器 ⇒ 页面被推宽 ⇒ 真机上整屏可以被横向拖动、左侧被裁掉。
+     minmax(0, 1fr) 允许列收缩到 0，内容自己换行。 */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.trend-stat-grid .stat {
+  text-align: left;
+  padding: var(--sp-3);
+  /* flex/grid 子项默认 min-width:auto，同样会被长内容撑破 */
+  min-width: 0;
+  /* 长数字允许在格子内部换行，不要把格子撑宽 */
+  overflow-wrap: anywhere;
+}
+.trend-stat-grid .stat__label { font-size: var(--fs-11); color: var(--text-3); line-height: 1.4; }
+/* ⚠️ 2026-11-05 截图实测到真 bug：格子窄时数值把宽度占满，
+   单位 "kcal" 被浏览器在字符间断开，渲染成 "7211.6 kc / al" 两行。
+   修法：把「数值」和「单位」各自当成整体 min-content 单元（flex + nowrap），
+   空间不够时不是拆字，而是单位整体降到下一行。
+   同时数字允许自身收缩（min-width:0 + overflow hidden）。 */
+.trend-stat-grid .stat__value {
+  margin-top: var(--sp-1);
+  display: flex;
+  flex-wrap: wrap;              /* 不够就整块换行，不在字内断 */
+  align-items: baseline;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--fs-22);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.trend-stat-grid .stat__value.is-over { color: var(--danger); }
+/* 数值本体：允许极度收缩时在字内折行（例如 5 位整数），但不撑破格子 */
+.trend-stat-grid .stat__num {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.trend-stat-grid .stat__unit {
+  font-size: var(--fs-11);
+  font-weight: 500;
+  color: var(--text-3);
+  /* 单位是原子：绝不拆字 */
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.trend-extremes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  margin-bottom: var(--sp-3);
+  font-variant-numeric: tabular-nums;
+}
+.trend-extreme-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--bg-elev-2);
+  border-radius: var(--r-sm);
+}
+.trend-extreme-item b { color: var(--text); font-weight: 600; }
+
+/* 一句话结论：整段最该被读到的句子，用左侧色条强调 */
+.trend-conclusion {
+  margin-top: var(--sp-2);
+  padding: var(--sp-3);
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.trend-conclusion b { color: var(--accent); font-weight: 700; }
+
+.trend-empty {
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  font-size: var(--fs-13);
+  color: var(--text-3);
+}
+
+/* ---------- 图表容器 ---------- */
+.trend-chart-card .chart { min-height: 120px; }
+.trend-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  font-size: var(--fs-13);
+  color: var(--text-3);
+}
+
+/* ---------- 体重历史抽屉：涨跌用颜色讲清楚 ---------- */
+.trend-diff { font-variant-numeric: tabular-nums; font-weight: 600; }
+.trend-diff--up { color: var(--danger); }    /* 涨 = 红（对减重目标是坏消息） */
+.trend-diff--down { color: var(--ok); }      /* 降 = 绿 */
+.trend-diff--flat { color: var(--text-3); }
+.trend-weight-row .list__title { font-size: var(--fs-13); color: var(--text-2); }
+.trend-weight-row .list__meta { font-size: var(--fs-12); color: var(--text-3); }
+.trend-weight-row .list__value { font-size: var(--fs-15); }
+
+/* ---------- 修改某天抽屉：主操作与危险操作物理分离 ---------- */
+.trend-editday-actions { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-3); }
+.trend-editday-actions .btn { min-height: 44px; }
+.trend-editday-danger {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* ---------- 每日明细：哪天超了一眼可见 ---------- */
+.trend-day-row .list__value { font-variant-numeric: tabular-nums; }
+.trend-day-row .list__value.is-over { color: var(--danger); }
+.trend-day-row.is-empty .list__title { color: var(--text-3); }
+
+/* ---------- 窄屏 ---------- */
+@media (max-width: 360px) {
+  .trend-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .trend-stat-grid .stat__value { font-size: var(--fs-17); }
+  .trend-range .segmented__item { font-size: var(--fs-12); padding: 0 var(--sp-1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trend-range .segmented__item { transition: none; }
+}
+
+/* ==========================================================================
+   设置页精修（2026-11-03 · W4 产出，Lead 复核后并入）
+   作用域：全部选择器以 .set- 开头，只影响设置页与其食物词典抽屉。
+   ========================================================================== */
+/* ---------- 分组标题 ----------
+   复用已有 .section-title 排版（12px/600/字距），仅微调垂直节奏：
+   组与组之间要"上面更空"，第一组贴住页首。 */
+.set-group-title { margin: var(--sp-6) 0 var(--sp-2); }
+.set-group-title--first { margin-top: var(--sp-1); }
+
+/* ---------- 卡片微调 ---------- */
+.set-card { /* 叠加在 .card 上，不改动基础卡片 */ }
+
+/* 每日目标输入行：单位弱化放在卡片头右侧 */
+.set-kcal-unit {
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 说明性小字（原内联样式，改为类） */
+.set-subtext {
+  font-size: var(--fs-13);
+  color: var(--text-2);
+  line-height: 1.6;
+  margin-bottom: var(--sp-3);
+}
+.set-subtext b { color: var(--text); }
+
+/* 食物词典条目徽标（叠加在 .badge--warn 上） */
+.set-count-badge {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 个人档案：滑块数值块 ----------
+   数值从 label 里挪出来，放行右端大号显示；拖动时 accent 高亮。
+   <output> 天生带隐式 aria，外加 for 关联。 */
+.set-slider-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: 44px;           /* 标签行本身也可视为热区的一部分 */
+}
+.set-slider-val {
+  font-size: var(--fs-22);
+  font-weight: 700;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1;
+  transition: transform var(--dur-1) var(--ease);
+}
+.set-slider-val .set-slider-unit {
+  font-size: var(--fs-12);
+  font-weight: 500;
+  color: var(--text-3);
+  margin-left: var(--sp-1);
+}
+.set-slider-head.is-dragging .set-slider-val { transform: scale(1.12); }
+.set-slider-head.is-dragging .set-slider-unit { color: var(--text-2); }
+
+/* ---------- 危险区 ----------
+   清空数据与导出/导入物理分离（独立卡片 + 上边距加大），
+   视觉上用 danger 语义色整卡包住，一眼可辨"这里会丢数据"。 */
+.set-danger { margin-top: var(--sp-2); }
+.set-card--danger {
+  border-color: color-mix(in srgb, var(--danger) 34%, var(--line));
+  background: color-mix(in srgb, var(--danger) 5%, var(--bg-elev));
+}
+.set-card--danger .card__title { color: var(--danger); }
+.set-danger-tag {
+  font-size: var(--fs-11);
+  font-weight: 600;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-radius: var(--r-full);
+  padding: 2px var(--sp-2);
+}
+.set-danger-btn {
+  background: var(--danger-strong);
+  border-color: var(--danger-strong);
+}
+
+/* ---------- 关于卡片 ---------- */
+.set-about p {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-13);
+  color: var(--text-2);
+  line-height: 1.7;
+}
+.set-about p:last-child { margin-bottom: 0; color: var(--text-3); }
+
+/* ---------- 食物词典管理抽屉 ----------
+   三形态（列表 / 编辑 / 新增）共用一个 body 容器切换，
+   面包屑标识当前形态，返回按钮是显式返回路径。 */
+
+/* 面包屑行：44px 高，整行是返回热区（点击文字也可返回） */
+.set-fd-crumb {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  font-size: var(--fs-13);
+  color: var(--text-3);
+}
+.set-fd-back {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--sp-1);
+  margin-left: calc(-1 * var(--sp-1));
+  color: var(--accent);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  border-radius: var(--r-sm);
+}
+.set-fd-back:active { background: var(--accent-soft); }
+/* 热区右向延伸补足 44px 宽（视觉仍是文字宽度） */
+.set-fd-back::after {
+  content: '';
+  position: absolute;
+  inset: -6px -10px;
+}
+.set-fd-crumb-sep { color: var(--line); }
+.set-fd-crumb-now { color: var(--text-2); font-weight: 500; }
+
+/* 列表行：名称与"每份 g · kcal"分层；数值用数字字体加粗 */
+.set-fd-row { align-items: center; }
+.set-fd-meta b {
+  color: var(--text);
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* 「改 / 删」动作：视觉是紧凑文字按钮，热区由 components.css 已有的
+   list__action 伪元素规则撑到 44px 高；这里补横向间距。 */
+.set-fd-act { margin-left: var(--sp-1); }
+.set-fd-act + .set-fd-act { margin-left: 0; }
+
+/* ---------- 表单（新增/编辑）----------
+   label 已改为 for/id 关联（settings.js）；保存主按钮本身已显眼；
+   取消按钮已弱化，无需额外覆盖。 */
+
+/* ---------- 减少动效偏好 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .set-slider-val { transition: none; }
+  .set-slider-head.is-dragging .set-slider-val { transform: none; }
+}
+
+/* ==========================================================================
+   今日页常吃按钮条 + 抽屉美化（2026-11-03 · W3 结构 + Lead 补 CSS）
+   目标：常吃不折叠、首屏横向按钮条，点一下→一次确认→落账（两次操作）。
+   契约：选择器统一 .quick-rail / .rail- 前缀；只用 tokens.css 真实 token；
+        触控热区 ≥44px；禁止在可点击卡片里嵌 button（长按删除已由 W3 实现）。
+   ========================================================================== */
+
+/* ---------- 常吃按钮条容器 ---------- */
+.quick-rail {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: stretch;
+  /* 横向滚动，不换行 —— 不折叠、不占多行，首屏只吃一条 */
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* ⚠️ 2026-11-06 去掉 scroll-snap：实测被解析成 `x`（mandatory），
+     松手时把位置强行吸到最近项，叠加手动 scrollLeft 映射后
+     产生"滑一点点就卡住/被吸回"的手感。常吃条是一排等宽按钮，
+     不需要逐项吸附，直接自由滚动更顺手。 */
+  -webkit-overflow-scrolling: touch;
+  /* 滚到底时不把页面顶开 */
+  overscroll-behavior-x: contain;
+  padding: var(--sp-1) var(--sp-1) var(--sp-2);
+  margin: 0 0 var(--sp-1);
+  /* 隐藏滚动条但保留可滚（移动端更干净） */
+  scrollbar-width: none;
+}
+.quick-rail::-webkit-scrollbar { display: none; }
+
+/* ---------- 单个常吃按钮 ---------- */
+.rail-item {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  /* 触控热区：宽高都不小于 44px */
+  min-height: 52px;
+  min-width: 76px;
+  max-width: 132px;
+  padding: var(--sp-2) var(--sp-3);
+  /* 深色区（今日页首屏是 soot 底） */
+  background: var(--soot-2);
+  border: 1px solid var(--soot-3);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  text-align: left;
+  /* ⚠️ 必须写在**基础样式**上，不能只在 .is-sorting 里加（2026-11-03 实测）：
+     touch-action 在 pointerdown 那一刻就被浏览器锁定，用于决定后续手势归谁。
+     等长按 500ms 后再加 .is-sorting 里的 touch-action:none 已经晚了 ——
+     浏览器仍按旧值把横向移动判成页面滚动，随即派发 pointercancel，
+     实测序列：pointerdown →(长按)→ pointermove ×1 → pointercancel，拖动只走一帧。
+     这里从静态样式就声明 pan-y：**横向手势不交给浏览器**。
+     代价是原生横向滚动也没了 —— 所以横向滚动改由 today.js 在 pointermove 里
+     手动 scrollLeft 实现（见 rail 段注释）。这样「滚动」和「长按拖动排序」
+     两个横向意图由代码按"有没有先长按"来区分，不再互相抢。 */
+  touch-action: pan-y;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.rail-item:active {
+  background: var(--soot-3);
+  transform: scale(0.97);
+}
+.rail-item__label {
+  display: block;
+  max-width: 100%;
+  font-size: var(--fs-13);
+  font-weight: 500;
+  line-height: 1.25;
+  /* 长标签截断，保证按钮宽度可控 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-item__kcal {
+  display: block;
+  font-size: var(--fs-11);
+  color: var(--ink-note);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+/* 「＋ 添加」按钮：视觉弱化，但保持同样的触控尺寸 */
+.rail-item--add {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--soot-3);
+  color: var(--ink-note);
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  max-width: 88px;
+}
+.rail-item--add .rail-item__label {
+  font-size: var(--fs-13);
+  color: var(--ink-note);
+}
+.rail-item--add:active { background: var(--soot-2); }
+
+/* 长按删除时的提示态：整条轻微变红，告诉用户「松手就删」 */
+.rail-item.is-holding {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, var(--soot-2));
+}
+.rail-item.is-holding .rail-item__label { color: var(--danger); }
+
+/* ---------- 记热量抽屉的四个 tab ---------- */
+.rail-tabs { margin-bottom: var(--sp-3); }
+.rail-tabs .segmented__item { min-height: 44px; }
+
+/* 手动 tab 的示例 chips：两行整齐排布，不再挤成一坨 */
+.rail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: var(--sp-2) 0 var(--sp-3);
+}
+.rail-chips .chip {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--sp-3);
+}
+
+/* 抽屉里的主操作按钮：统一 44px 高，主次分明 */
+.rail-actions { display: flex; flex-direction: column; gap: var(--sp-2); }
+.rail-actions .btn { min-height: 44px; }
+
+/* ---------- 快捷 tab 的网格（抽屉内，不是首屏那条） ---------- */
+.rail-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+/* ---------- 窄屏适配 ---------- */
+@media (max-width: 360px) {
+  .rail-item { min-width: 68px; padding: var(--sp-2); }
+  .rail-item__label { font-size: var(--fs-12); }
+  .rail-quick-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- 减少动效 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .rail-item { transition: none; }
+  .rail-item:active { transform: none; }
+}
+
+/* ==========================================================================
+   常吃按钮条 · 长按整理模式（2026-11-03）
+   用户要求：「能像手机桌面那样，长按改变位置」。
+   进入整理模式（.quick-rail.is-sorting）时：
+     - 关掉横向滚动，否则拖动会变成滚动
+     - 被拖的项浮起（放大 + 阴影），给"可移动"的直觉
+     - 其它项过渡让位
+   ========================================================================== */
+.quick-rail.is-sorting {
+  /* 关键：整理时必须禁掉横向滚动与吸附，否则 pointermove 被浏览器拿去滚动了 */
+  overflow-x: visible;
+  scroll-snap-type: none;
+  /* ⚠️ 最关键的一条（2026-11-03 实测踩到）：
+     整理态把 overflow-x 从 auto 改成 visible 后，浏览器发现该元素不再消费横向手势，
+     就把后续 pointermove 判成"页面滚动"，直接派发 **pointercancel**。
+     实测事件序列：pointerdown →（长按成功）→ pointermove ×1 → pointercancel，
+     于是拖动只走一帧就被掐断、顺序永远不变（3 项验收因此失败）。
+     touch-action:none 明确告诉浏览器"这块区域的手势归我处理，别接管"。 */
+  touch-action: none;
+  /* 拖动时手指不要选中文字 */
+  -webkit-user-select: none;
+  user-select: none;
+  /* 允许子项溢出显示（浮起效果不被裁） */
+  padding-block: var(--sp-2);
+}
+.quick-rail.is-sorting .rail-item {
+  /* 让位动画：其它项在被推挤时平滑移动 */
+  transition: transform var(--dur-2) var(--ease), background var(--dur-1) var(--ease);
+  /* 子项也要禁手势接管：手指落在按钮上时，浏览器默认仍可能判成滚动 */
+  touch-action: none;
+}
+.quick-rail.is-sorting .rail-item.is-dragging {
+  /* 浮起：和 iOS 桌面图标被长按时的观感一致。
+     ⚠️ 放大与位移必须合成到一个 transform 里 —— today.js 拖动时用
+     `style.transform = translateX(...) scale(1.06)` 整体写入，
+     若这里再用独立的 `scale:` 属性，两者会叠加成 1.06×1.06 且优先级混乱。 */
+  position: relative;
+  z-index: 10;
+  /* 双层阴影：近处实影 + 远处扩散影，屏幕小也看得出抬起 */
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, .55),
+    0 10px 28px rgba(0, 0, 0, .5);
+  border-color: var(--accent);
+  background: var(--soot-3);
+  /* 拖动中不要 transition，否则会拖影 */
+  transition: none;
+  cursor: grabbing;
+  /* 提高对比，让被拖项从其它项里跳出来 */
+  opacity: 1 !important;
+}
+.quick-rail.is-sorting .rail-item.is-dragging .rail-item__label { color: var(--ink); }
+.quick-rail.is-sorting .rail-item.is-dragging .rail-item__kcal { color: var(--accent); }
+/* 整理态下其它项轻微降透明度，突出被拖的那个 */
+.quick-rail.is-sorting .rail-item:not(.is-dragging) { opacity: .82; }
+
+/* 减少动效偏好：去掉浮起的过渡 */
+@media (prefers-reduced-motion: reduce) {
+  .quick-rail.is-sorting .rail-item { transition: none; }
+}
+
+/* ==========================================================================
+   历史复用 · 排序切换（2026-11-03 用户要求）
+   右上角一组 segmented：「次数多→少」/「时间新→旧」。
+   与抽屉 tab 的 segmented 区分：更紧凑、字号更小，不抢主体列表的注意力。
+   ========================================================================== */
+.hist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  flex-wrap: wrap;
+}
+.hist-head__label {
+  font-size: var(--fs-12);
+  color: var(--text-3);
+}
+.hist-sort {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.hist-sort .segmented__item {
+  min-height: 32px;              /* 比主 tab 小一档，但仍好点 */
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-11);
+  font-weight: 500;
+  color: var(--text-2);
+  background: transparent;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.hist-sort .segmented__item.is-active {
+  color: var(--accent-ink);
+  background: var(--accent);
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hist-sort .segmented__item { transition: none; }
+}
+
+/* ==========================================================================
+   清除数据 · 三级抽屉（2026-11-03 用户要求「把红不啦唧的藏三级页面里面」）
+   主设置页只留一行低调文字入口 .set-danger-link；红色警示只在抽屉里出现。
+   ========================================================================== */
+.set-danger-link {
+  /* 弱化到"需要时才找得到"：灰色小字、无边框，hover/active 才显出按钮感 */
+  color: var(--text-3);
+  background: transparent;
+  border: 0;
+  font-size: var(--fs-12);
+  padding: var(--sp-2) var(--sp-1);
+  min-height: 36px;
+}
+.set-danger-link:active { color: var(--text-2); background: var(--bg-elev-2); }
+
+.set-danger-tag--inline {
+  display: inline-block;
+  margin-bottom: var(--sp-3);
+}
+.set-danger-list {
+  margin: 0 0 var(--sp-3);
+  padding-left: var(--sp-5);
+  font-size: var(--fs-13);
+  color: var(--text-2);
+  line-height: 1.8;
+}
+.set-danger-list li { margin-bottom: var(--sp-1); }
+.set-danger-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.set-danger-actions .btn { min-height: 44px; }
+
+/* ==========================================================================
+   次级页面优化（2026-11-05）
+   ========================================================================== */
+
+/* ---------- 记热量 · 手动 tab 的折叠帮助 ----------
+   原来两段说明常驻，占约 120px，把「记录」主按钮压到屏幕下半部。
+   改成 <details> 折叠，默认收起，需要时展开。 */
+.intake-help {
+  margin-top: var(--sp-3);
+  border-top: 1px solid var(--line-soft);
+  padding-top: var(--sp-2);
+}
+.intake-help > summary {
+  /* 折叠标题本身要够大才好点 */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  cursor: pointer;
+  list-style: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.intake-help > summary::-webkit-details-marker { display: none; }
+.intake-help > summary::after {
+  content: '▾';
+  margin-left: var(--sp-1);
+  color: var(--text-3);
+  transition: transform var(--dur-1) var(--ease);
+}
+.intake-help[open] > summary::after { transform: rotate(180deg); }
+.intake-help > summary:active { color: var(--text-2); }
+.intake-help .hint { margin-top: var(--sp-2); }
+
+/* ---------- 食物词典：主操作「+1 份」+「份数」 ---------- */
+.food-row {
+  /* 行内两个动作，主体不被挤压 */
+  align-items: center;
+}
+.food-row .list__meta b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.food-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 0 0 auto;
+}
+.food-actions .btn {
+  /* 两枚按钮都要够大，且不要把行撑宽。
+     2026-11-05 二次调整：实测两枚按钮占行宽 40%（min-width:62 + padding:12*2），
+     「午饭套餐」这类 4 字食物名被压到约 200px 显得局促。
+     收窄到 min-width:54 / padding:8，整体降到约 33%，仍保持 44px 触控高度。 */
+  min-height: 44px;
+  min-width: 54px;
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-13);
+  white-space: nowrap;
+}
+.food-more {
+  color: var(--text-2);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+}
+.food-more:active { background: var(--bg-sunken); }
+/* 份数展开行：跟在原行后面，横向排开 */
+.food-more-row {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0 var(--sp-1);
+  animation: food-more-in var(--dur-2) var(--ease);
+}
+.food-more-row .chip {
+  min-height: 44px;
+  min-width: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-13);
+}
+@keyframes food-more-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 历史复用：排序条右对齐（去掉重复的文字标签后） ---------- */
+.hist-head {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--sp-3);
+}
+
+/* ---------- 趋势页 · 体重卡空态压缩 ----------
+   实测：无体重数据时，图表容器仍按 min-height 占位，留出约 400px 空白，
+   把「本周摄入」整块推到首屏之外。空态时不该按图表高度占位。 */
+.trend-chart-empty,
+.chart:empty {
+  min-height: 0;
+}
+.trend-weight-empty {
+  padding: var(--sp-4) var(--sp-3);
+  text-align: center;
+  font-size: var(--fs-13);
+  color: var(--text-3);
+  background: var(--bg-elev-2);
+  border-radius: var(--r-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intake-help > summary::after { transition: none; }
+  .food-more-row { animation: none; }
+}
+
+/* 修改某天 · 危险动作的后果说明（2026-11-05） */
+.trend-editday-hint {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-12);
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+/* ==========================================================================
+   待分摊区（2026-11-06）
+   实测问题：.ledger__allocs 这个类**在 CSS 里从未定义**（grep 零命中），
+   分摊区落在 .view--ledger 之外，因此用的是旧版 .card 样式（深底 + 圆角 16px），
+   与今日页的账本风格不一致 —— 用户反馈「分摊与底部还没有新 UI 接入」。
+   用户选择：**保持深色，只对齐设计系统**（不改成纸白卡）。
+   ========================================================================== */
+.ledger__allocs {
+  /* 深色区：与首屏 soot 底保持一致，而不是旧版 --bg-elev */
+  background: var(--soot-2);
+  border: 1px solid var(--soot-3);
+  border-radius: var(--r-md);
+  margin-top: var(--sp-4);
+  /* 与台账的纸白区拉开呼吸，但不至于脱离首屏节奏 */
+  padding: 0;
+  overflow: hidden;
+}
+.ledger__allocs .card__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--soot-3);
+  background: transparent;
+}
+.ledger__allocs .card__title {
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+/* 「待分摊」徽标：用 warn 语义色，与账本深色底协调 */
+.ledger__allocs .badge--warn {
+  font-size: var(--fs-11);
+  font-weight: 600;
+  color: var(--warn);
+  background: var(--warn-soft);
+  border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+  border-radius: var(--r-full);
+  padding: 2px var(--sp-2);
+  white-space: nowrap;
+}
+.ledger__allocs .card__body { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+
+/* 每条分摊：一行，金额用等宽数字，右侧停止按钮 */
+.ledger__allocs .list { gap: 0; }
+.ledger__allocs .list__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--soot-3);
+  border-radius: 0;
+  min-height: 56px;
+}
+.ledger__allocs .list__row:last-child { border-bottom: 0; }
+.ledger__allocs .list__title {
+  font-size: var(--fs-17);
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.ledger__allocs .list__meta {
+  font-size: var(--fs-12);
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+/* 停止分摊：深色区里的主操作，用 accent 实心（与「记一笔」同族） */
+.ledger__allocs .btn--ok {
+  flex: 0 0 auto;
+  min-height: 44px;
+  min-width: 96px;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+}
+.ledger__allocs .btn--ok:active {
+  background: var(--accent-strong);
+}
+
+/* 窄屏：金额与按钮不要挤 */
+@media (max-width: 360px) {
+  .ledger__allocs .list__title { font-size: var(--fs-15); }
+  .ledger__allocs .btn--ok { min-width: 84px; padding: 0 var(--sp-2); }
+}

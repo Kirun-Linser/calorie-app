@@ -1,0 +1,48 @@
+/* ===== reset + 排版 + 无障碍 + 安全区 ===== */
+*, *::before, *::after { box-sizing: border-box; }
+* { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+html, body { margin: 0; padding: 0; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* ⚠️ 横向溢出兜底（2026-11-03 真机截图实测后加）：
+     任何单个元素一旦超宽（长数字、长标签、表格、图表），整页就会变成可横向拖动 ——
+     真机上表现为「整屏被推左、左边被裁掉、右边一片空白」，用户描述为「滑动莫名其妙跑偏」。
+     这里在根元素上锁死横向滚动，作为**最后一道防线**：
+     正确做法仍是让每个组件自己不超宽（见 .trend-stat-grid 的 minmax(0,1fr) 注释），
+     但兜底能保证即使某个组件写错，也不会把整页带偏。
+     注意用 clip 而不是 hidden：clip 不会创建滚动容器，不影响 position:fixed 的 tabbar。 */
+  overflow-x: clip;
+}
+html, body { max-width: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-15);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  overflow-x: clip;
+}
+img, svg { max-width: 100%; display: block; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: none; padding: 0; }
+a { color: var(--accent); text-decoration: none; }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+::selection { background: var(--accent-soft); color: var(--text); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
